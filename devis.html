@@ -95,11 +95,18 @@
       <button type="submit" class="btn btn-primaire btn-full">Envoyer ma demande</button>
     </form>`;
 
+  // Clé Web3Forms (gratuit, sans backend) : les demandes sont envoyées
+  // directement par email à l'adresse configurée sur web3forms.com avec
+  // cette clé.
+  const WEB3FORMS_ACCESS_KEY = "d09f6df6-1abc-4343-bd3e-8e37b1a48c5b";
+
   const form = document.getElementById("form-devis");
-  form.addEventListener("submit", (e) => {
+  const boutonEnvoyer = form.querySelector("button[type=submit]");
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Piège à bots : si rempli, on affiche quand même un succès sans rien enregistrer.
+    // Piège à bots : si rempli, on affiche quand même un succès sans rien envoyer.
     const siteWeb = document.getElementById("site-web").value;
 
     const champs = { prenom: "prenom", nom: "nom", email: "email", telephone: "telephone", ville: "ville", message: "message" };
@@ -117,31 +124,64 @@
     }
     if (!valide) return;
 
+    const valeurs = {
+      nom: document.getElementById("nom").value,
+      prenom: document.getElementById("prenom").value,
+      email: document.getElementById("email").value,
+      telephone: document.getElementById("telephone").value,
+      ville: document.getElementById("ville").value,
+      message: document.getElementById("message").value,
+    };
+
+    let envoiReussi = true;
+
     if (!siteWeb) {
-      // ⚠️ Pas de vrai serveur : la demande est simplement gardée dans ce
-      // navigateur (localStorage), elle n'est PAS envoyée par email. Pour
-      // recevoir de vraies demandes, il faut un service tiers (ex.
-      // Formspree, Web3Forms) ou un petit serveur.
+      // Sauvegarde locale (visible dans le tableau de bord admin de ce navigateur).
       const demandes = JSON.parse(localStorage.getItem("ac_amenagement_devis") || "[]");
-      demandes.push({
-        nom: document.getElementById("nom").value,
-        prenom: document.getElementById("prenom").value,
-        email: document.getElementById("email").value,
-        telephone: document.getElementById("telephone").value,
-        ville: document.getElementById("ville").value,
-        message: document.getElementById("message").value,
-        produit: produit ? produit.slug : null,
-        configuration: config || null,
-        date: new Date().toISOString(),
-      });
+      demandes.push({ ...valeurs, produit: produit ? produit.slug : null, configuration: config || null, date: new Date().toISOString() });
       localStorage.setItem("ac_amenagement_devis", JSON.stringify(demandes));
+
+      // Envoi réel par email via Web3Forms.
+      boutonEnvoyer.disabled = true;
+      boutonEnvoyer.textContent = "Envoi en cours…";
+      const recapTexte = produit
+        ? `Produit sélectionné : ${produit.nom} (${Donnees.formatPrix(produit.prix)})`
+        : config
+          ? `Configuration : ${[config.collectionNom && `Collection ${config.collectionNom}`, config.modele && `Modèle ${config.modele}`, config.largeur && `${config.largeur}×${config.hauteur} cm`, config.epaisseur && `${config.epaisseur} mm`, config.matiere && (LIBELLES_MATIERE[config.matiere] || config.matiere), config.prix && `≈ ${Donnees.formatPrix(config.prix)}`].filter(Boolean).join(" — ")}`
+          : "Demande libre (sans produit ni configuration précise).";
+      try {
+        const reponse = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            access_key: WEB3FORMS_ACCESS_KEY,
+            subject: `Nouvelle demande de devis — ${valeurs.prenom} ${valeurs.nom}`,
+            from_name: "Site AC Aménagement",
+            Prénom: valeurs.prenom,
+            Nom: valeurs.nom,
+            Email: valeurs.email,
+            Téléphone: valeurs.telephone,
+            Ville: valeurs.ville,
+            Projet: valeurs.message,
+            "Récapitulatif": recapTexte,
+          }),
+        });
+        const resultat = await reponse.json();
+        envoiReussi = !!resultat.success;
+      } catch (err) {
+        envoiReussi = false;
+      }
     }
 
-    zone.innerHTML = `
-      <div class="carte text-center" style="border-color:rgba(201,166,107,0.3);background:rgba(201,166,107,0.05);">
-        <h3 style="font-size:1.5rem;">Merci pour votre demande !</h3>
-        <p class="texte-muted mt-2">Notre équipe vous recontactera sous 48h ouvrées pour échanger sur votre projet.</p>
-      </div>`;
+    zone.innerHTML = envoiReussi
+      ? `<div class="carte text-center" style="border-color:rgba(201,166,107,0.3);background:rgba(201,166,107,0.05);">
+          <h3 style="font-size:1.5rem;">Merci pour votre demande !</h3>
+          <p class="texte-muted mt-2">Notre équipe vous recontactera sous 48h ouvrées pour échanger sur votre projet.</p>
+        </div>`
+      : `<div class="carte text-center" style="border-color:rgba(224,82,82,0.3);background:rgba(224,82,82,0.05);">
+          <h3 style="font-size:1.5rem;">Votre demande est enregistrée, mais l'envoi a échoué.</h3>
+          <p class="texte-muted mt-2">Contactez-nous directement au 06 45 38 13 00 ou à acamenagement@hotmail.com pour être sûr d'être recontacté.</p>
+        </div>`;
   });
 </script>
 </body>
