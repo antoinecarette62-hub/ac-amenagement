@@ -93,6 +93,15 @@ function initLayout() {
   if (burger && navMobile) {
     const iconeBurger = document.getElementById("icone-burger");
     const iconeFermer = document.getElementById("icone-fermer");
+
+    function fermerMenu() {
+      navMobile.classList.remove("ouvert");
+      burger.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("menu-ouvert");
+      if (iconeBurger) iconeBurger.style.display = "block";
+      if (iconeFermer) iconeFermer.style.display = "none";
+    }
+
     burger.addEventListener("click", () => {
       const ouvert = navMobile.classList.toggle("ouvert");
       burger.setAttribute("aria-expanded", String(ouvert));
@@ -101,13 +110,12 @@ function initLayout() {
       if (iconeFermer) iconeFermer.style.display = ouvert ? "block" : "none";
     });
     navMobile.querySelectorAll("a").forEach((lien) => {
-      lien.addEventListener("click", () => {
-        navMobile.classList.remove("ouvert");
-        burger.setAttribute("aria-expanded", "false");
-        document.body.classList.remove("menu-ouvert");
-        if (iconeBurger) iconeBurger.style.display = "block";
-        if (iconeFermer) iconeFermer.style.display = "none";
-      });
+      lien.addEventListener("click", fermerMenu);
+    });
+    // Cliquer n'importe où dans la zone du menu (pas juste sur un lien)
+    // referme aussi le menu.
+    navMobile.addEventListener("click", (e) => {
+      if (e.target === navMobile) fermerMenu();
     });
   }
 }
