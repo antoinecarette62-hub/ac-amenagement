@@ -70,7 +70,7 @@ function construireFooter() {
       </div>
       <div class="container footer-bas">
         <p>&copy; ${new Date().getFullYear()} AC Aménagement. Tous droits réservés.</p>
-        <div class="flex gap-3"><a href="#">Mentions légales</a><a href="#">Confidentialité</a></div>
+        <div class="flex gap-3"><a href="mentions-legales.html">Mentions légales</a><a href="confidentialite.html">Confidentialité</a></div>
       </div>
     </footer>`;
 }
