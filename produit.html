@@ -253,10 +253,10 @@
       volume.style.transform = `translateY(${decalageVertical}px) perspective(900px) rotateY(${x * 35}deg) rotateX(${-y * 35}deg) scale3d(${echelle},${echelle},${echelle})`;
     }
 
-    relief.addEventListener("mousemove", (e) => {
+    function survoler(clientX, clientY) {
       const rect = relief.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+      const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const y = ((clientY - rect.top) / rect.height) * 2 - 1;
       dernierX = x; dernierY = y;
       appliquerTransform(x, y, true);
       ombre.style.transform = `translate(calc(-50% + ${x * 16}px), 0) scale(${1 - Math.abs(x) * 0.1}, 1)`;
@@ -264,13 +264,29 @@
         animationEnAttente = true;
         requestAnimationFrame(() => { peindreLumiere(dernierX, dernierY); animationEnAttente = false; });
       }
-    });
-    relief.addEventListener("mouseleave", () => {
+    }
+    function reinitialiserSurvol() {
       dernierX = 0; dernierY = 0;
       appliquerTransform(0, 0, false);
       ombre.style.transform = "translate(-50%, 0) scale(1,1)";
       peindreLumiere(0, 0);
-    });
+    }
+
+    relief.addEventListener("mousemove", (e) => survoler(e.clientX, e.clientY));
+    relief.addEventListener("mouseleave", reinitialiserSurvol);
+
+    // Équivalent tactile (tablette/mobile) : faire glisser le doigt sur la
+    // claustra incline l'objet et déplace la lumière, comme la souris.
+    relief.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) survoler(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    relief.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 1) {
+        e.preventDefault();
+        survoler(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
+    relief.addEventListener("touchend", reinitialiserSurvol);
 
     // Vignettes pour changer de photo (si plusieurs images disponibles).
     if (images.length > 1) {
