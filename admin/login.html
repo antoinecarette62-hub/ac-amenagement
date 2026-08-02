@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="../images/logo.png" />
+<title>Connexion — Admin AC Aménagement</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<main style="min-height:100svh;display:flex;align-items:center;justify-content:center;padding:2rem;">
+  <div style="width:100%;max-width:22rem;">
+    <h1 class="text-center" style="font-size:1.75rem;margin-bottom:0.5rem;">Espace <span class="gold-text">administration</span></h1>
+    <p class="texte-muted text-center" style="font-size:0.8rem;margin-bottom:2rem;">⚠️ Démo sans sécurité réelle — voir le README avant mise en ligne publique.</p>
+
+    <form id="form-login">
+      <div class="champ">
+        <label for="mot-de-passe">Mot de passe</label>
+        <input id="mot-de-passe" type="password" required autofocus />
+      </div>
+      <p class="champ-erreur hidden" id="erreur-login">Mot de passe incorrect.</p>
+      <button type="submit" class="btn btn-primaire btn-full mt-4">Se connecter</button>
+    </form>
+  </div>
+</main>
+
+<script src="../js/admin.js"></script>
+<script>
+  // Si déjà connecté, on renvoie directement au tableau de bord.
+  if (estConnecte()) location.href = "index.html";
+
+  document.getElementById("form-login").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const motDePasse = document.getElementById("mot-de-passe").value;
+    if (connecter(motDePasse)) {
+      location.href = "index.html";
+    } else {
+      document.getElementById("erreur-login").classList.remove("hidden");
+    }
+  });
+</script>
+</body>
+</html>

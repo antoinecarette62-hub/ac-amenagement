@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title>Configurateur — AC Aménagement</title>
+<meta name="description" content="Composez votre claustra sur mesure : collection, dimensions et matière, avec un prix estimé en temps réel." />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .configurateur { display: grid; gap: 2.5rem; grid-template-columns: 1fr; }
+  @media (min-width: 1024px) { .configurateur { grid-template-columns: 1fr 1.1fr; } }
+  .apercu-cadre { display: flex; align-items: center; justify-content: center; border-radius: 1rem; border: 1px solid var(--border); background: var(--noir-soft); padding: 2rem; }
+  .apercu-claustra { position: relative; width: 100%; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.4); background: var(--anthracite); }
+  .apercu-claustra img { display: block; width: 100%; height: auto; }
+  .pastille-groupe { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pastille { border: 1px solid var(--border); border-radius: 999px; padding: 0.55rem 1.1rem; font-size: 0.85rem; }
+  .pastille.actif { border-color: var(--or); background: var(--or); color: var(--noir); }
+  .champ-slider { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; }
+  input[type="range"] { width: 100%; accent-color: var(--or); background: none; padding: 0; border: none; }
+  .bloc-prix { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; border: 1px solid rgba(201,166,107,0.3); background: rgba(201,166,107,0.05); border-radius: 1rem; padding: 1.5rem; margin-top: 1rem; }
+  .bloc-prix .montant { font-size: 1.75rem; font-family: 'Fraunces', serif; font-weight: 300; }
+
+  /* ---------- Fond « atelier d'architecte » ---------- */
+  .config-scene {
+    position: relative; overflow: hidden;
+    background: linear-gradient(160deg, #0D0D0D 0%, #1A1A1A 55%, #131313 100%);
+    background-size: 220% 220%;
+    animation: config-derive-degrade 46s ease-in-out infinite alternate;
+  }
+  .config-texture {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  .config-plan { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .config-halo { position: absolute; border-radius: 999px; filter: blur(90px); pointer-events: none; }
+  .config-halo-1 {
+    width: 40rem; height: 40rem; top: -14rem; right: -12rem;
+    background: radial-gradient(circle, rgba(200,168,107,0.16), transparent 70%);
+    animation: config-derive-halo-1 36s ease-in-out infinite alternate;
+  }
+  .config-halo-2 {
+    width: 32rem; height: 32rem; bottom: -10rem; left: -10rem;
+    background: radial-gradient(circle, rgba(200,168,107,0.1), transparent 70%);
+    animation: config-derive-halo-2 42s ease-in-out infinite alternate;
+  }
+  @keyframes config-derive-degrade { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
+  @keyframes config-derive-halo-1 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(-4%, 5%) scale(1.08); } }
+  @keyframes config-derive-halo-2 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(4%, -4%) scale(1.1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .config-scene, .config-halo { animation: none; }
+  }
+  .config-scene-contenu { position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="config-scene">
+    <div class="config-texture" aria-hidden="true"></div>
+    <svg class="config-plan" viewBox="0 0 1400 900" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g stroke="#C8A86B" stroke-width="1" fill="none" opacity="0.16">
+        <rect x="50" y="50" width="240" height="170" />
+        <line x1="50" y1="50" x2="290" y2="220" />
+        <circle cx="290" cy="50" r="5" />
+        <line x1="0" y1="470" x2="120" y2="470" />
+        <rect x="1080" y="600" width="280" height="240" />
+        <line x1="1360" y1="840" x2="1110" y2="840" />
+        <line x1="1360" y1="840" x2="1360" y2="670" />
+        <circle cx="1360" cy="670" r="5" />
+      </g>
+    </svg>
+    <div class="config-halo config-halo-1" aria-hidden="true"></div>
+    <div class="config-halo config-halo-2" aria-hidden="true"></div>
+    <div class="container config-scene-contenu">
+      <p class="fil-ariane"><a href="index.html">Accueil</a> › <span class="actif">Configurateur</span></p>
+
+      <div class="section-tete reveal">
+        <p class="eyebrow">Sur mesure</p>
+        <h1>Composez votre claustra</h1>
+        <p class="texte-muted mt-4">Ajustez les dimensions et la matière : le prix se met à jour instantanément.</p>
+        <p class="texte-muted mt-2 hidden" id="recap-produit" style="font-size:0.85rem;"></p>
+      </div>
+
+      <div class="configurateur reveal" style="transition-delay:0.1s;">
+        <div class="apercu-cadre">
+          <div class="apercu-claustra" id="apercu"><img src="" alt="Aperçu du claustra" id="apercu-image" /></div>
+        </div>
+
+        <div>
+          <div class="champ">
+            <label>Collection</label>
+            <div class="pastille-groupe" id="pastilles-collection"></div>
+          </div>
+
+          <div class="champ">
+            <label>Modèle</label>
+            <div class="pastille-groupe" id="pastilles-modele"></div>
+          </div>
+
+          <div class="champ">
+            <div class="champ-slider"><label for="largeur">Largeur</label><span id="valeur-largeur">100 cm</span></div>
+            <input type="range" id="largeur" min="40" max="200" step="5" value="100" />
+          </div>
+
+          <div class="champ">
+            <div class="champ-slider"><label for="hauteur">Hauteur</label><span id="valeur-hauteur">200 cm</span></div>
+            <input type="range" id="hauteur" min="100" max="270" step="5" value="200" />
+          </div>
+
+          <div class="champ">
+            <label>Épaisseur</label>
+            <div class="pastille-groupe" id="pastilles-epaisseur">
+              <button class="pastille" data-valeur="12">12 mm</button>
+              <button class="pastille actif" data-valeur="18">18 mm</button>
+              <button class="pastille" data-valeur="24">24 mm</button>
+            </div>
+          </div>
+
+          <div class="champ">
+            <label>Matière</label>
+            <div class="pastille-groupe" id="pastilles-matiere"></div>
+          </div>
+
+          <div class="bloc-prix">
+            <div>
+              <p style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">Prix estimé</p>
+              <p class="montant" id="prix-estime">0 €</p>
+              <p style="font-size:0.75rem;color:var(--muted);margin-top:0.25rem;">Estimation indicative, confirmée avec votre devis.</p>
+            </div>
+            <a href="#" class="btn btn-primaire" id="btn-devis">Demander un devis →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  /* ⚠️ Grille tarifaire volontairement simple et illustrative — voir
+     note dans le README. À remplacer par les vrais tarifs. */
+  const FORFAIT_FACONNAGE = 150;
+  const PRIX_PAR_M2 = { MDF: 180, CHENE: 340 };
+  const LIBELLES_MATIERE_CONFIG = { MDF: "MDF", CHENE: "Bois massif" };
+  const SEUIL_EPAISSEUR_STANDARD = 18;
+  const MAJORATION_EPAISSEUR_PAR_MM = 4;
+
+  function calculerPrix({ largeur, hauteur, epaisseur, matiere }) {
+    const surfaceM2 = (largeur / 100) * (hauteur / 100);
+    const prixSurface = surfaceM2 * PRIX_PAR_M2[matiere];
+    const surepaisseur = Math.max(0, epaisseur - SEUIL_EPAISSEUR_STANDARD);
+    const majoration = surepaisseur * MAJORATION_EPAISSEUR_PAR_MM * surfaceM2;
+    return Math.round(FORFAIT_FACONNAGE + prixSurface + majoration);
+  }
+
+  const donnees = Donnees.charger();
+  const collectionsVisibles = donnees.collections.filter((c) => c.visible).sort((a, b) => a.ordre - b.ordre);
+
+  // Arrivée depuis une fiche produit (bouton "Personnaliser dans le configurateur") :
+  // on pré-remplit avec les caractéristiques exactes de ce claustra.
+  const paramsUrl = new URLSearchParams(location.search);
+  const produitInitial = donnees.produits.find((p) => p.slug === paramsUrl.get("produit")) || null;
+
+  function premierProduitDe(collectionSlug) {
+    return donnees.produits.find((p) => p.collectionSlug === collectionSlug && p.visible) || null;
+  }
+
+  const etat = {
+    collection: (produitInitial && donnees.collections.find((c) => c.slug === produitInitial.collectionSlug)) || collectionsVisibles[0] || null,
+    largeur: produitInitial ? produitInitial.largeur : 100,
+    hauteur: produitInitial ? produitInitial.hauteur : 200,
+    epaisseur: produitInitial ? produitInitial.epaisseur : 18,
+    matiere: (produitInitial && PRIX_PAR_M2[produitInitial.matiere]) ? produitInitial.matiere : "MDF",
+  };
+  etat.produit = produitInitial || premierProduitDe(etat.collection ? etat.collection.slug : null);
+
+  const elLargeur = document.getElementById("largeur");
+  const elHauteur = document.getElementById("hauteur");
+  const elValeurLargeur = document.getElementById("valeur-largeur");
+  const elValeurHauteur = document.getElementById("valeur-hauteur");
+  const elApercuImage = document.getElementById("apercu-image");
+  const elPrix = document.getElementById("prix-estime");
+  const elBtnDevis = document.getElementById("btn-devis");
+  const elRecapProduit = document.getElementById("recap-produit");
+
+  elLargeur.value = etat.largeur;
+  elHauteur.value = etat.hauteur;
+
+  if (produitInitial) {
+    elRecapProduit.textContent = `Configuration initiale basée sur « ${produitInitial.nom} ». Modifiez-la librement ci-dessous.`;
+    elRecapProduit.classList.remove("hidden");
+  }
+
+  // Photo affichée dans l'aperçu : celle du modèle précis choisi ci-dessous.
+  function trouverImageApercu() {
+    return etat.produit ? etat.produit.imagePrincipale : "";
+  }
+
+  function construirePastilles(conteneurId, valeurs, libelleFn, valeurActive, onClick) {
+    const conteneur = document.getElementById(conteneurId);
+    conteneur.innerHTML = "";
+    valeurs.forEach((v) => {
+      const btn = document.createElement("button");
+      btn.className = "pastille" + (v === valeurActive ? " actif" : "");
+      btn.textContent = libelleFn(v);
+      btn.addEventListener("click", () => onClick(v));
+      conteneur.appendChild(btn);
+    });
+  }
+
+  function rendre() {
+    construirePastilles("pastilles-collection", collectionsVisibles, (c) => c.nom, etat.collection, (c) => {
+      etat.collection = c;
+      etat.produit = premierProduitDe(c.slug);
+      rendre();
+    });
+
+    // Libellé raccourci pour l'affichage des pastilles uniquement (le nom
+    // complet du produit, lui, reste inchangé partout ailleurs sur le site).
+    const libelleModele = (p) => p.nom.replace(/^Géométrique/, "Géo");
+
+    const modelesCollection = donnees.produits.filter((p) => etat.collection && p.collectionSlug === etat.collection.slug && p.visible);
+    construirePastilles("pastilles-modele", modelesCollection, libelleModele, etat.produit, (p) => {
+      etat.produit = p; rendre();
+    });
+
+    construirePastilles("pastilles-matiere", Object.keys(PRIX_PAR_M2), (m) => LIBELLES_MATIERE_CONFIG[m], etat.matiere, (m) => {
+      etat.matiere = m; rendre();
+    });
+
+    document.querySelectorAll("#pastilles-epaisseur .pastille").forEach((btn) => {
+      btn.classList.toggle("actif", Number(btn.dataset.valeur) === etat.epaisseur);
+    });
+
+    elValeurLargeur.textContent = `${etat.largeur} cm`;
+    elValeurHauteur.textContent = `${etat.hauteur} cm`;
+    elApercuImage.src = trouverImageApercu();
+
+    const prix = calculerPrix(etat);
+    elPrix.textContent = Donnees.formatPrix(prix);
+
+    const params = new URLSearchParams({
+      collection: etat.collection ? etat.collection.slug : "",
+      modele: etat.produit ? etat.produit.nom : "",
+      matiere: etat.matiere,
+      largeur: etat.largeur,
+      hauteur: etat.hauteur,
+      epaisseur: etat.epaisseur,
+      prix,
+    });
+    elBtnDevis.href = `devis.html?${params.toString()}`;
+  }
+
+  elLargeur.addEventListener("input", (e) => { etat.largeur = Number(e.target.value); rendre(); });
+  elHauteur.addEventListener("input", (e) => { etat.hauteur = Number(e.target.value); rendre(); });
+  document.querySelectorAll("#pastilles-epaisseur .pastille").forEach((btn) => {
+    btn.addEventListener("click", () => { etat.epaisseur = Number(btn.dataset.valeur); rendre(); });
+  });
+
+  rendre();
+  window.initReveal();
+</script>
+</body>
+</html>

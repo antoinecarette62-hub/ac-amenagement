@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title>Demander un devis — AC Aménagement</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .bloc-recap { border: 1px solid rgba(201,166,107,0.3); background: rgba(201,166,107,0.05); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; }
+  .bloc-recap img { width: 3.5rem; height: 3.5rem; border-radius: 0.5rem; object-fit: cover; background: var(--anthracite); }
+  .bloc-recap ul { list-style: none; font-size: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem 1rem; }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section-fond-anime">
+    <canvas class="canvas-fond-anime" aria-hidden="true"></canvas>
+    <div class="motif-fond-anime" aria-hidden="true"></div>
+    <div class="voile-fond-anime" aria-hidden="true"></div>
+    <div class="container contenu-fond-anime" style="max-width:42rem;">
+      <div class="text-center reveal">
+        <p class="eyebrow">Sur mesure</p>
+        <h1>Parlons de votre projet.</h1>
+        <p class="texte-muted mt-4">Remplissez ce formulaire, un membre de notre équipe vous recontacte sous 48h ouvrées.</p>
+      </div>
+
+      <div id="zone-formulaire" class="reveal mt-8" style="transition-delay:0.1s;"></div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/fond-anime.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const donnees = Donnees.charger();
+  const zone = document.getElementById("zone-formulaire");
+
+  // Résout soit un produit précis (?produit=slug), soit une configuration libre.
+  const produit = params.get("produit") ? donnees.produits.find((p) => p.slug === params.get("produit")) : null;
+  const config = !produit && (params.get("largeur") || params.get("matiere"))
+    ? {
+        collectionNom: (donnees.collections.find((c) => c.slug === params.get("collection")) || {}).nom,
+        modele: params.get("modele"),
+        largeur: params.get("largeur"), hauteur: params.get("hauteur"), epaisseur: params.get("epaisseur"),
+        matiere: params.get("matiere"), couleur: params.get("couleur"), prix: params.get("prix"),
+      }
+    : null;
+
+  let recapHtml = "";
+  if (produit) {
+    recapHtml = `<div class="bloc-recap">
+      <img src="${produit.imagePrincipale}" alt="${produit.nom}" />
+      <div><p class="eyebrow" style="margin:0;">Produit sélectionné</p><p style="font-family:'Fraunces',serif;">${produit.nom}</p><p class="texte-muted" style="font-size:0.85rem;">${Donnees.formatPrix(produit.prix)}</p></div>
+    </div>`;
+  } else if (config) {
+    recapHtml = `<div class="bloc-recap" style="display:block;">
+      <p class="eyebrow" style="margin-bottom:0.5rem;">Configuration sélectionnée</p>
+      <ul>
+        ${config.collectionNom ? `<li>Collection : ${config.collectionNom}</li>` : ""}
+        ${config.modele ? `<li>Modèle : ${config.modele}</li>` : ""}
+        ${config.largeur ? `<li>Dimensions : ${config.largeur} × ${config.hauteur} cm</li>` : ""}
+        ${config.epaisseur ? `<li>Épaisseur : ${config.epaisseur} mm</li>` : ""}
+        ${config.matiere ? `<li>Matière : ${LIBELLES_MATIERE[config.matiere] || config.matiere}</li>` : ""}
+        ${config.couleur ? `<li>Coloris : ${config.couleur}</li>` : ""}
+        ${config.prix ? `<li style="grid-column:1/-1;font-weight:500;">Prix estimé : ${Donnees.formatPrix(config.prix)}</li>` : ""}
+      </ul>
+    </div>`;
+  }
+
+  zone.innerHTML = `
+    ${recapHtml}
+    <form id="form-devis" novalidate>
+      <div style="position:absolute;left:-9999px;" aria-hidden="true">
+        <label for="site-web">Ne pas remplir</label>
+        <input type="text" id="site-web" tabindex="-1" autocomplete="off" />
+      </div>
+      <div class="champ-ligne champ-ligne-2">
+        <div class="champ"><label for="prenom">Prénom</label><input id="prenom" required minlength="2" /><p class="champ-erreur hidden" data-erreur="prenom"></p></div>
+        <div class="champ"><label for="nom">Nom</label><input id="nom" required minlength="2" /><p class="champ-erreur hidden" data-erreur="nom"></p></div>
+      </div>
+      <div class="champ-ligne champ-ligne-2">
+        <div class="champ"><label for="email">Email</label><input id="email" type="email" required /><p class="champ-erreur hidden" data-erreur="email"></p></div>
+        <div class="champ"><label for="telephone">Téléphone</label><input id="telephone" type="tel" required /><p class="champ-erreur hidden" data-erreur="telephone"></p></div>
+      </div>
+      <div class="champ"><label for="ville">Ville</label><input id="ville" required minlength="2" /><p class="champ-erreur hidden" data-erreur="ville"></p></div>
+      <div class="champ"><label for="message">Votre projet</label><textarea id="message" rows="4" required minlength="10" placeholder="Décrivez votre projet : pièce concernée, dimensions approximatives, style recherché…"></textarea><p class="champ-erreur hidden" data-erreur="message"></p></div>
+      <button type="submit" class="btn btn-primaire btn-full">Envoyer ma demande</button>
+    </form>`;
+
+  const form = document.getElementById("form-devis");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    // Piège à bots : si rempli, on affiche quand même un succès sans rien enregistrer.
+    const siteWeb = document.getElementById("site-web").value;
+
+    const champs = { prenom: "prenom", nom: "nom", email: "email", telephone: "telephone", ville: "ville", message: "message" };
+    let valide = true;
+    document.querySelectorAll(".champ-erreur").forEach((el) => el.classList.add("hidden"));
+
+    for (const id of Object.values(champs)) {
+      const input = document.getElementById(id);
+      if (!input.checkValidity()) {
+        valide = false;
+        const erreurEl = document.querySelector(`[data-erreur="${id}"]`);
+        erreurEl.textContent = input.validationMessage || "Ce champ est requis.";
+        erreurEl.classList.remove("hidden");
+      }
+    }
+    if (!valide) return;
+
+    if (!siteWeb) {
+      // ⚠️ Pas de vrai serveur : la demande est simplement gardée dans ce
+      // navigateur (localStorage), elle n'est PAS envoyée par email. Pour
+      // recevoir de vraies demandes, il faut un service tiers (ex.
+      // Formspree, Web3Forms) ou un petit serveur.
+      const demandes = JSON.parse(localStorage.getItem("ac_amenagement_devis") || "[]");
+      demandes.push({
+        nom: document.getElementById("nom").value,
+        prenom: document.getElementById("prenom").value,
+        email: document.getElementById("email").value,
+        telephone: document.getElementById("telephone").value,
+        ville: document.getElementById("ville").value,
+        message: document.getElementById("message").value,
+        produit: produit ? produit.slug : null,
+        configuration: config || null,
+        date: new Date().toISOString(),
+      });
+      localStorage.setItem("ac_amenagement_devis", JSON.stringify(demandes));
+    }
+
+    zone.innerHTML = `
+      <div class="carte text-center" style="border-color:rgba(201,166,107,0.3);background:rgba(201,166,107,0.05);">
+        <h3 style="font-size:1.5rem;">Merci pour votre demande !</h3>
+        <p class="texte-muted mt-2">Notre équipe vous recontactera sous 48h ouvrées pour échanger sur votre projet.</p>
+      </div>`;
+  });
+</script>
+</body>
+</html>

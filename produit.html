@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title id="titre-page">Produit — AC Aménagement</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .fiche-produit { display: grid; gap: 3rem; grid-template-columns: 1fr; }
+  @media (min-width: 1024px) { .fiche-produit { grid-template-columns: 1fr 1fr; } }
+  .relief-3d {
+    position: relative; border-radius: 1rem; overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(228,207,160,0.4) 0%, rgba(201,166,107,0.24) 28%, rgba(156,123,68,0.12) 48%, transparent 68%),
+      radial-gradient(ellipse at 50% 100%, rgba(201,166,107,0.1), transparent 60%),
+      var(--noir);
+    display: flex; align-items: center; justify-content: center;
+    min-height: 320px; padding: 2.5rem 1.5rem;
+    touch-action: none;
+  }
+  .relief-3d-ombre {
+    position: absolute; left: 50%; bottom: 10%; width: 55%; height: 8%;
+    transform: translate(-50%, 0) scale(1, 1);
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.55), rgba(0,0,0,0) 72%);
+    filter: blur(6px);
+    transition: transform 0.2s ease-out;
+    pointer-events: none;
+  }
+  .relief-3d-volume {
+    position: relative; display: inline-block;
+    transform-style: preserve-3d;
+    transition: transform 0.2s ease-out;
+  }
+  .relief-3d-volume #canvas-actif {
+    position: relative; z-index: 1; display: block;
+    width: auto; height: auto; max-width: 100%; max-height: 420px;
+    filter: drop-shadow(0 25px 25px rgba(0,0,0,0.35));
+    transform: translateZ(0);
+  }
+  .relief-3d-volume #canvas-arriere {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    filter: brightness(0.42) saturate(0.6);
+    transform: translateZ(-16px);
+  }
+  .vignettes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+  .vignette { position: relative; aspect-ratio: 1/1; border-radius: 0.5rem; overflow: hidden; border: 2px solid transparent; cursor: pointer; }
+  .vignette.actif { border-color: var(--or); }
+  .vignette img { width: 100%; height: 100%; object-fit: contain; }
+  .prix-produit { font-size: 1.5rem; font-weight: 500; margin: 1rem 0; }
+  .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1.5rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 2rem 0; }
+  .specs .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .boutons-produit { display: flex; flex-direction: column; gap: 0.75rem; }
+  @media (min-width: 640px) { .boutons-produit { flex-direction: row; } }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section-fond-anime">
+    <canvas class="canvas-fond-anime" aria-hidden="true"></canvas>
+    <div class="motif-fond-anime" aria-hidden="true"></div>
+    <div class="voile-fond-anime" aria-hidden="true"></div>
+    <div class="container contenu-fond-anime">
+      <p class="fil-ariane" id="fil-ariane">…</p>
+
+      <div class="fiche-produit" id="fiche-produit"></div>
+    </div>
+  </section>
+  <section style="padding-top:0;">
+    <div class="container">
+      <div id="bloc-similaires"></div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/fond-anime.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const slugProduit = params.get("slug");
+  const donnees = Donnees.charger();
+  const produit = donnees.produits.find((p) => p.slug === slugProduit && p.visible);
+
+  if (!produit) {
+    document.querySelector("main .container").innerHTML =
+      '<p class="texte-muted">Produit introuvable. <a href="collections.html" style="color:var(--or);">Retour aux collections</a></p>';
+  } else {
+    const collection = donnees.collections.find((c) => c.slug === produit.collectionSlug);
+    document.title = `${produit.nom} — AC Aménagement`;
+
+    document.getElementById("fil-ariane").innerHTML = `
+      <a href="index.html">Accueil</a> › <a href="collections.html">Collections</a> ›
+      <a href="collection.html?slug=${collection.slug}">${collection.nom}</a> ›
+      <span class="actif">${produit.nom}</span>`;
+
+    const images = [produit.imagePrincipale, ...(produit.images || [])];
+
+    document.getElementById("fiche-produit").innerHTML = `
+      <div class="reveal">
+        <div class="relief-3d" id="relief-3d">
+          <div class="relief-3d-ombre" id="relief-ombre"></div>
+          <div class="relief-3d-volume" id="relief-volume">
+            <canvas id="canvas-arriere" aria-hidden="true"></canvas>
+            <canvas id="canvas-actif" role="img" aria-label="${produit.nom}"></canvas>
+          </div>
+        </div>
+        ${images.length > 1 ? `<div class="vignettes" id="vignettes"></div>` : ""}
+      </div>
+      <div class="reveal" style="transition-delay:0.1s;">
+        <p class="eyebrow">${collection.nom}</p>
+        <h1 style="font-size:clamp(1.5rem,4.5vw,2.25rem);">${produit.nom}</h1>
+        <p class="texte-muted" style="line-height:1.7;">${produit.description}</p>
+        <div class="boutons-produit">
+          <a href="devis.html?produit=${produit.slug}" class="btn btn-primaire">Demander un devis pour ce modèle</a>
+          <a href="configurateur.html?produit=${produit.slug}" class="btn btn-secondaire">Personnaliser dans le configurateur</a>
+        </div>
+      </div>`;
+
+    const canvasActif = document.getElementById("canvas-actif");
+    const canvasArriere = document.getElementById("canvas-arriere");
+    let imageActuelle = null;
+    let dernierX = 0, dernierY = 0;
+
+    // Dessine un calque arrière assombri, décalé en profondeur (translateZ en
+    // CSS) pour donner une impression d'épaisseur réelle au panneau (18 mm)
+    // quand on l'incline : le décalage entre l'avant et l'arrière devient
+    // visible sur les bords, comme la tranche d'un vrai claustra.
+    function dessinerArriere() {
+      if (!imageActuelle) return;
+      canvasArriere.width = canvasActif.width;
+      canvasArriere.height = canvasActif.height;
+      const ctx = canvasArriere.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.clearRect(0, 0, canvasArriere.width, canvasArriere.height);
+      ctx.drawImage(imageActuelle, 0, 0, canvasArriere.width, canvasArriere.height);
+    }
+
+    // Peint un jeu de lumière dynamique sur la photo (déjà détourée en amont,
+    // fond transparent) : une lueur suit la souris (source-atop = peint
+    // uniquement sur les pixels déjà opaques du claustra, jamais sur le fond
+    // transparent) et une ombre légère se place du côté opposé pour
+    // accentuer le relief du motif.
+    function peindreLumiere(x, y) {
+      if (!imageActuelle) return;
+      const ctx = canvasActif.getContext("2d");
+      const w = canvasActif.width, h = canvasActif.height;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(imageActuelle, 0, 0, w, h);
+      ctx.save();
+      ctx.globalCompositeOperation = "source-atop";
+
+      const rayon = Math.max(w, h) * 0.75;
+
+      const ox = (1 - (x * 0.5 + 0.5)) * w;
+      const oy = (1 - (y * 0.5 + 0.5)) * h;
+      const ombreSurface = ctx.createRadialGradient(ox, oy, 0, ox, oy, rayon);
+      ombreSurface.addColorStop(0, "rgba(0,0,0,0.22)");
+      ombreSurface.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = ombreSurface;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.restore();
+    }
+
+    // Recadre l'image sur son contenu réel (retire les marges transparentes
+    // en trop, qui décalent visuellement le claustra vers le haut du cadre)
+    // et nettoie les résidus de fond blanchâtre semi-transparents qui
+    // traînent parfois sur les bords après un détourage.
+    function recadrerEtNettoyer(img) {
+      const brut = document.createElement("canvas");
+      brut.width = img.naturalWidth;
+      brut.height = img.naturalHeight;
+      const ctxBrut = brut.getContext("2d");
+      ctxBrut.drawImage(img, 0, 0);
+      const donneesImage = ctxBrut.getImageData(0, 0, brut.width, brut.height);
+      const px = donneesImage.data;
+
+      let minX = brut.width, minY = brut.height, maxX = -1, maxY = -1;
+      for (let y = 0; y < brut.height; y++) {
+        const base = y * brut.width * 4;
+        for (let x = 0; x < brut.width; x++) {
+          const i = base + x * 4;
+          const a = px[i + 3];
+          if (a > 0 && a < 60 && px[i] > 225 && px[i + 1] > 225 && px[i + 2] > 225) {
+            px[i + 3] = 0;
+            continue;
+          }
+          if (px[i + 3] > 12) {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+      ctxBrut.putImageData(donneesImage, 0, 0);
+
+      if (maxX < minX || maxY < minY) return brut;
+
+      const marge = Math.round(Math.max(maxX - minX, maxY - minY) * 0.015);
+      minX = Math.max(0, minX - marge);
+      minY = Math.max(0, minY - marge);
+      maxX = Math.min(brut.width - 1, maxX + marge);
+      maxY = Math.min(brut.height - 1, maxY + marge);
+
+      const largeur = maxX - minX + 1;
+      const hauteur = maxY - minY + 1;
+      const recadre = document.createElement("canvas");
+      recadre.width = largeur;
+      recadre.height = hauteur;
+      recadre.getContext("2d").drawImage(brut, minX, minY, largeur, hauteur, 0, 0, largeur, hauteur);
+      return recadre;
+    }
+
+    function afficherImage(src, secours) {
+      const img = new Image();
+      img.onload = () => {
+        imageActuelle = recadrerEtNettoyer(img);
+        canvasActif.width = imageActuelle.width;
+        canvasActif.height = imageActuelle.height;
+        peindreLumiere(dernierX, dernierY);
+        dessinerArriere();
+      };
+      if (secours) img.onerror = () => afficherImage(secours);
+      img.src = src;
+    }
+    // Fiche produit : photo détourée (fond transparent) si disponible,
+    // sinon on retombe sur la photo studio classique.
+    afficherImage(produit.imageDetouree || images[0], images[0]);
+
+    // Effet de relief 3D : le claustra détouré flotte selon la position de la
+    // souris (inclinaison + lumière qui balaie la surface), son ombre au sol
+    // se décale légèrement en sens inverse. Zoom fixe, un peu plus rapproché
+    // par défaut (pas de zoom interactif à la molette/au pincement).
+    const relief = document.getElementById("relief-3d");
+    const ombre = document.getElementById("relief-ombre");
+    const volume = document.getElementById("relief-volume");
+    let animationEnAttente = false;
+    const zoom = 1.1;
+    const decalageVertical = produit.decalageVertical || 0;
+
+    function appliquerTransform(x, y, survole) {
+      const echelle = zoom + (survole ? 0.05 : 0);
+      volume.style.transform = `translateY(${decalageVertical}px) perspective(900px) rotateY(${x * 35}deg) rotateX(${-y * 35}deg) scale3d(${echelle},${echelle},${echelle})`;
+    }
+
+    relief.addEventListener("mousemove", (e) => {
+      const rect = relief.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+      dernierX = x; dernierY = y;
+      appliquerTransform(x, y, true);
+      ombre.style.transform = `translate(calc(-50% + ${x * 16}px), 0) scale(${1 - Math.abs(x) * 0.1}, 1)`;
+      if (!animationEnAttente) {
+        animationEnAttente = true;
+        requestAnimationFrame(() => { peindreLumiere(dernierX, dernierY); animationEnAttente = false; });
+      }
+    });
+    relief.addEventListener("mouseleave", () => {
+      dernierX = 0; dernierY = 0;
+      appliquerTransform(0, 0, false);
+      ombre.style.transform = "translate(-50%, 0) scale(1,1)";
+      peindreLumiere(0, 0);
+    });
+
+    // Vignettes pour changer de photo (si plusieurs images disponibles).
+    if (images.length > 1) {
+      const vignettesEl = document.getElementById("vignettes");
+      images.forEach((src, i) => {
+        const v = document.createElement("div");
+        v.className = "vignette" + (i === 0 ? " actif" : "");
+        v.innerHTML = `<img src="${src}" alt="${produit.nom} — vue ${i + 1}" />`;
+        v.addEventListener("click", () => {
+          afficherImage(src);
+          vignettesEl.querySelectorAll(".vignette").forEach((el) => el.classList.remove("actif"));
+          v.classList.add("actif");
+        });
+        vignettesEl.appendChild(v);
+      });
+    }
+
+    // Produits similaires (même collection).
+    const similaires = donnees.produits.filter((p) => p.collectionSlug === produit.collectionSlug && p.slug !== produit.slug && p.visible).slice(0, 3);
+    if (similaires.length > 0) {
+      const bloc = document.getElementById("bloc-similaires");
+      bloc.innerHTML = `<h2 class="reveal mt-8" style="font-size:1.5rem;margin-bottom:2rem;">Vous aimerez aussi</h2><div class="grille grille-3" id="grille-similaires"></div>`;
+      const grilleSimilaires = document.getElementById("grille-similaires");
+      similaires.forEach((p, i) => {
+        const el = document.createElement("a");
+        el.href = `produit.html?slug=${p.slug}`;
+        el.className = "carte-produit reveal";
+        el.style.transitionDelay = `${i * 0.06}s`;
+        el.innerHTML = `
+          <div class="carte-produit-image"><img src="${p.imagePrincipale}" alt="${p.nom}" loading="lazy" /></div>
+          <div class="carte-produit-corps">
+            <h3 class="carte-produit-nom">${p.nom}</h3>
+          </div>`;
+        grilleSimilaires.appendChild(el);
+      });
+    }
+
+    window.initReveal();
+  }
+</script>
+</body>
+</html>

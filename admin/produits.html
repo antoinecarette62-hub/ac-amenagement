@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="../images/logo.png" />
+<title>Produits — Admin AC Aménagement</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<div class="admin-corps" id="admin-layout">
+  <main class="admin-contenu">
+    <div class="flex" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1 style="font-size:1.75rem;">Produits</h1>
+        <p class="texte-muted mt-2" id="compteur-produits"></p>
+      </div>
+      <button class="btn btn-primaire btn-sm" id="btn-nouveau-produit">+ Nouveau produit</button>
+    </div>
+
+    <div class="panneau-formulaire mt-8 hidden" id="panneau-formulaire">
+      <h2 id="titre-formulaire" style="font-size:1.1rem;margin-bottom:1rem;">Nouveau produit</h2>
+      <form id="form-produit">
+        <input type="hidden" id="produit-id" />
+        <div class="champ"><label for="produit-nom">Nom</label><input id="produit-nom" required minlength="2" /></div>
+        <div class="champ"><label for="produit-slug">Slug (URL)</label><input id="produit-slug" required /></div>
+        <div class="champ"><label for="produit-collection">Collection</label><select id="produit-collection"></select></div>
+        <div class="champ"><label for="produit-description">Description</label><textarea id="produit-description" rows="3" required minlength="10"></textarea></div>
+
+        <div class="champ-ligne champ-ligne-2">
+          <div class="champ"><label for="produit-prix">Prix (€)</label><input id="produit-prix" type="number" step="0.01" required /></div>
+          <div class="champ">
+            <label for="produit-matiere">Matière</label>
+            <select id="produit-matiere">
+              <option value="MDF">MDF laqué</option>
+              <option value="CHENE">Bois massif</option>
+              <option value="NOIR_MAT">Noir mat</option>
+              <option value="METAL">Métal</option>
+              <option value="ALUMINIUM">Aluminium</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="champ-ligne champ-ligne-3">
+          <div class="champ"><label for="produit-largeur">Largeur (cm)</label><input id="produit-largeur" type="number" required /></div>
+          <div class="champ"><label for="produit-hauteur">Hauteur (cm)</label><input id="produit-hauteur" type="number" required /></div>
+          <div class="champ"><label for="produit-epaisseur">Épaisseur (mm)</label><input id="produit-epaisseur" type="number" required /></div>
+        </div>
+
+        <div class="champ-ligne champ-ligne-2">
+          <div class="champ"><label for="produit-couleur">Couleur</label><input id="produit-couleur" required /></div>
+          <div class="champ"><label for="produit-delai">Délai de fabrication (jours)</label><input id="produit-delai" type="number" value="15" /></div>
+        </div>
+
+        <div class="champ">
+          <label>Image principale</label>
+          <div class="zone-upload" id="zone-upload-principale">Glissez-déposez une image ici, ou cliquez pour parcourir</div>
+          <input type="file" id="fichier-principal" accept="image/*" class="hidden" />
+          <div class="miniatures-upload" id="apercu-principal"></div>
+        </div>
+
+        <div class="champ">
+          <label>Images additionnelles</label>
+          <div class="zone-upload" id="zone-upload-secondaires">Glissez-déposez des images ici, ou cliquez pour parcourir</div>
+          <input type="file" id="fichier-secondaires" accept="image/*" multiple class="hidden" />
+          <div class="miniatures-upload" id="apercu-secondaires"></div>
+        </div>
+
+        <div class="champ" style="display:flex;align-items:center;gap:0.5rem;">
+          <input type="checkbox" id="produit-visible" checked style="width:auto;" /><label for="produit-visible" style="margin:0;">Visible sur le site</label>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="submit" class="btn btn-primaire">Enregistrer</button>
+          <button type="button" class="btn btn-secondaire" id="btn-annuler-produit">Annuler</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="table-scroll mt-8">
+      <table class="table-admin">
+        <thead><tr><th>Produit</th><th>Collection</th><th>Prix</th><th>Visibilité</th><th></th></tr></thead>
+        <tbody id="corps-table-produits"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/admin.js"></script>
+<script>
+  exigerConnexion();
+  let donnees = Donnees.charger();
+  let imagePrincipaleEdition = "";
+  let imagesSecondairesEdition = [];
+
+  const CLOUDINARY_CLOUD_NAME = "votre-cloud-name";
+  const CLOUDINARY_UPLOAD_PRESET = "votre-upload-preset";
+
+  async function uploaderVersCloudinary(fichier) {
+    const formData = new FormData();
+    formData.append("file", fichier);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "ac-amenagement");
+    const reponse = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+    if (!reponse.ok) throw new Error("Échec de l'upload.");
+    const data = await reponse.json();
+    return data.secure_url;
+  }
+
+  const panneau = document.getElementById("panneau-formulaire");
+  const form = document.getElementById("form-produit");
+  const selectCollection = document.getElementById("produit-collection");
+
+  function remplirSelectCollections() {
+    selectCollection.innerHTML = donnees.collections.map((c) => `<option value="${c.slug}">${c.nom}</option>`).join("");
+  }
+
+  document.getElementById("btn-nouveau-produit").addEventListener("click", () => ouvrirFormulaire(null));
+  document.getElementById("btn-annuler-produit").addEventListener("click", () => panneau.classList.add("hidden"));
+  document.getElementById("produit-nom").addEventListener("input", (e) => {
+    if (!document.getElementById("produit-id").value) document.getElementById("produit-slug").value = Donnees.slugify(e.target.value);
+  });
+
+  // Upload image principale
+  const zonePrincipale = document.getElementById("zone-upload-principale");
+  const fichierPrincipal = document.getElementById("fichier-principal");
+  zonePrincipale.addEventListener("click", () => fichierPrincipal.click());
+  fichierPrincipal.addEventListener("change", async (e) => {
+    const fichier = e.target.files[0];
+    if (!fichier) return;
+    try {
+      zonePrincipale.textContent = "Envoi en cours…";
+      imagePrincipaleEdition = await uploaderVersCloudinary(fichier);
+      afficherApercus();
+    } catch { alert("Upload impossible : vérifiez la configuration Cloudinary (voir README)."); }
+    finally { zonePrincipale.textContent = "Glissez-déposez une image ici, ou cliquez pour parcourir"; }
+  });
+
+  // Upload images secondaires (plusieurs)
+  const zoneSecondaires = document.getElementById("zone-upload-secondaires");
+  const fichierSecondaires = document.getElementById("fichier-secondaires");
+  zoneSecondaires.addEventListener("click", () => fichierSecondaires.click());
+  fichierSecondaires.addEventListener("change", async (e) => {
+    const fichiers = Array.from(e.target.files).slice(0, 5 - imagesSecondairesEdition.length);
+    if (fichiers.length === 0) return;
+    try {
+      zoneSecondaires.textContent = "Envoi en cours…";
+      const urls = await Promise.all(fichiers.map(uploaderVersCloudinary));
+      imagesSecondairesEdition.push(...urls);
+      afficherApercus();
+    } catch { alert("Upload impossible : vérifiez la configuration Cloudinary (voir README)."); }
+    finally { zoneSecondaires.textContent = "Glissez-déposez des images ici, ou cliquez pour parcourir"; }
+  });
+
+  function afficherApercus() {
+    document.getElementById("apercu-principal").innerHTML = imagePrincipaleEdition
+      ? `<div class="miniature-upload"><img src="${imagePrincipaleEdition}" alt="Aperçu" /></div>` : "";
+
+    document.getElementById("apercu-secondaires").innerHTML = imagesSecondairesEdition.map((url, i) => `
+      <div class="miniature-upload"><img src="${url}" alt="Aperçu ${i + 1}" /><button type="button" data-retirer="${i}">✕</button></div>`).join("");
+
+    document.querySelectorAll("[data-retirer]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        imagesSecondairesEdition.splice(Number(btn.dataset.retirer), 1);
+        afficherApercus();
+      });
+    });
+  }
+
+  function ouvrirFormulaire(produit) {
+    remplirSelectCollections();
+    document.getElementById("titre-formulaire").textContent = produit ? `Modifier « ${produit.nom} »` : "Nouveau produit";
+    document.getElementById("produit-id").value = produit ? produit.id : "";
+    document.getElementById("produit-nom").value = produit ? produit.nom : "";
+    document.getElementById("produit-slug").value = produit ? produit.slug : "";
+    document.getElementById("produit-collection").value = produit ? produit.collectionSlug : (donnees.collections[0] || {}).slug || "";
+    document.getElementById("produit-description").value = produit ? produit.description : "";
+    document.getElementById("produit-prix").value = produit ? produit.prix : "";
+    document.getElementById("produit-matiere").value = produit ? produit.matiere : "MDF";
+    document.getElementById("produit-largeur").value = produit ? produit.largeur : 100;
+    document.getElementById("produit-hauteur").value = produit ? produit.hauteur : 200;
+    document.getElementById("produit-epaisseur").value = produit ? produit.epaisseur : 18;
+    document.getElementById("produit-couleur").value = produit ? produit.couleur : "";
+    document.getElementById("produit-delai").value = produit ? produit.tempsFabrication : 15;
+    document.getElementById("produit-visible").checked = produit ? produit.visible : true;
+    imagePrincipaleEdition = produit ? produit.imagePrincipale : "";
+    imagesSecondairesEdition = produit ? (produit.images || []).slice() : [];
+    afficherApercus();
+    panneau.classList.remove("hidden");
+    panneau.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const id = document.getElementById("produit-id").value;
+    const slug = document.getElementById("produit-slug").value.trim();
+
+    const doublon = donnees.produits.find((p) => p.slug === slug && p.id !== id);
+    if (doublon) { alert("Ce slug est déjà utilisé par un autre produit."); return; }
+    if (!imagePrincipaleEdition) { alert("Merci d'ajouter une image principale."); return; }
+
+    const valeurs = {
+      nom: document.getElementById("produit-nom").value.trim(),
+      slug,
+      collectionSlug: document.getElementById("produit-collection").value,
+      description: document.getElementById("produit-description").value.trim(),
+      prix: Number(document.getElementById("produit-prix").value),
+      matiere: document.getElementById("produit-matiere").value,
+      largeur: Number(document.getElementById("produit-largeur").value),
+      hauteur: Number(document.getElementById("produit-hauteur").value),
+      epaisseur: Number(document.getElementById("produit-epaisseur").value),
+      couleur: document.getElementById("produit-couleur").value.trim(),
+      tempsFabrication: Number(document.getElementById("produit-delai").value),
+      imagePrincipale: imagePrincipaleEdition,
+      images: imagesSecondairesEdition.slice(),
+      visible: document.getElementById("produit-visible").checked,
+    };
+
+    if (id) {
+      const index = donnees.produits.findIndex((p) => p.id === id);
+      donnees.produits[index] = { ...donnees.produits[index], ...valeurs };
+    } else {
+      donnees.produits.push({ id: "p-" + Date.now(), ...valeurs });
+    }
+    Donnees.sauvegarder(donnees);
+    panneau.classList.add("hidden");
+    rendre();
+  });
+
+  function supprimer(id, nom) {
+    if (!confirm(`Supprimer définitivement le produit "${nom}" ?`)) return;
+    donnees.produits = donnees.produits.filter((p) => p.id !== id);
+    Donnees.sauvegarder(donnees);
+    rendre();
+  }
+
+  function dupliquer(id) {
+    const original = donnees.produits.find((p) => p.id === id);
+    let suffixe = 1;
+    let nouveauSlug = `${original.slug}-copie`;
+    while (donnees.produits.find((p) => p.slug === nouveauSlug)) { suffixe += 1; nouveauSlug = `${original.slug}-copie-${suffixe}`; }
+    donnees.produits.push({ ...original, id: "p-" + Date.now(), nom: `${original.nom} (copie)`, slug: nouveauSlug, visible: false });
+    Donnees.sauvegarder(donnees);
+    rendre();
+  }
+
+  function basculerVisibilite(id) {
+    const p = donnees.produits.find((x) => x.id === id);
+    p.visible = !p.visible;
+    Donnees.sauvegarder(donnees);
+    rendre();
+  }
+
+  function rendre() {
+    document.getElementById("compteur-produits").textContent = `${donnees.produits.length} produit(s)`;
+    const corps = document.getElementById("corps-table-produits");
+    corps.innerHTML = "";
+
+    donnees.produits.slice().reverse().forEach((p) => {
+      const collection = donnees.collections.find((c) => c.slug === p.collectionSlug);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><div class="flex gap-3" style="align-items:center;"><img class="miniature" src="${p.imagePrincipale}" alt="${p.nom}" />${p.nom}</div></td>
+        <td>${collection ? collection.nom : "—"}</td>
+        <td>${Donnees.formatPrix(p.prix)}</td>
+        <td><button class="action-icone" data-action="visibilite" style="width:auto;padding:0 0.5rem;">${p.visible ? "👁 Visible" : "🚫 Masqué"}</button></td>
+        <td class="text-center"><button class="action-icone" data-action="dupliquer">⧉</button> <button class="action-icone" data-action="modifier">✎</button> <button class="action-icone" data-action="supprimer">🗑</button></td>`;
+
+      tr.querySelector('[data-action="visibilite"]').addEventListener("click", () => basculerVisibilite(p.id));
+      tr.querySelector('[data-action="dupliquer"]').addEventListener("click", () => dupliquer(p.id));
+      tr.querySelector('[data-action="modifier"]').addEventListener("click", () => ouvrirFormulaire(p));
+      tr.querySelector('[data-action="supprimer"]').addEventListener("click", () => supprimer(p.id, p.nom));
+      corps.appendChild(tr);
+    });
+  }
+
+  rendre();
+</script>
+</body>
+</html>

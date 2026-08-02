@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="../images/logo.png" />
+<title>Collections — Admin AC Aménagement</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<div class="admin-corps" id="admin-layout">
+  <main class="admin-contenu">
+    <div class="flex" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1 style="font-size:1.75rem;">Collections</h1>
+        <p class="texte-muted mt-2" id="compteur-collections"></p>
+      </div>
+      <button class="btn btn-primaire btn-sm" id="btn-nouvelle-collection">+ Nouvelle collection</button>
+    </div>
+
+    <div class="panneau-formulaire mt-8 hidden" id="panneau-formulaire">
+      <h2 id="titre-formulaire" style="font-size:1.1rem;margin-bottom:1rem;">Nouvelle collection</h2>
+      <form id="form-collection">
+        <input type="hidden" id="collection-id" />
+        <div class="champ"><label for="collection-nom">Nom</label><input id="collection-nom" required minlength="2" /></div>
+        <div class="champ"><label for="collection-slug">Slug (URL)</label><input id="collection-slug" required /></div>
+        <div class="champ"><label for="collection-description">Description</label><textarea id="collection-description" rows="3" required minlength="10"></textarea></div>
+        <div class="champ">
+          <label>Image de couverture</label>
+          <div class="zone-upload" id="zone-upload-collection">Glissez-déposez une image ici, ou cliquez pour parcourir</div>
+          <input type="file" id="fichier-collection" accept="image/*" class="hidden" />
+          <div class="miniatures-upload" id="apercu-collection"></div>
+        </div>
+        <div class="champ-ligne champ-ligne-2">
+          <div class="champ"><label for="collection-ordre">Ordre d'affichage</label><input id="collection-ordre" type="number" value="0" /></div>
+          <div class="champ" style="display:flex;align-items:center;gap:0.5rem;margin-top:1.5rem;"><input type="checkbox" id="collection-visible" checked style="width:auto;" /><label for="collection-visible" style="margin:0;">Visible sur le site</label></div>
+        </div>
+        <div class="flex gap-3">
+          <button type="submit" class="btn btn-primaire">Enregistrer</button>
+          <button type="button" class="btn btn-secondaire" id="btn-annuler-collection">Annuler</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="table-scroll mt-8">
+      <table class="table-admin">
+        <thead><tr><th>Collection</th><th>Produits</th><th>Ordre</th><th>Visibilité</th><th></th></tr></thead>
+        <tbody id="corps-table-collections"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/admin.js"></script>
+<script>
+  exigerConnexion();
+  let donnees = Donnees.charger();
+  let imageEnCoursEdition = "";
+
+  const panneau = document.getElementById("panneau-formulaire");
+  const form = document.getElementById("form-collection");
+
+  document.getElementById("btn-nouvelle-collection").addEventListener("click", () => ouvrirFormulaire(null));
+  document.getElementById("btn-annuler-collection").addEventListener("click", () => panneau.classList.add("hidden"));
+
+  document.getElementById("collection-nom").addEventListener("input", (e) => {
+    if (!document.getElementById("collection-id").value) {
+      document.getElementById("collection-slug").value = Donnees.slugify(e.target.value);
+    }
+  });
+
+  // Upload Cloudinary (fonctionne sans backend, appel direct depuis le navigateur).
+  // ⚠️ Remplacez CLOUD_NAME et UPLOAD_PRESET par les vôtres (voir README).
+  const CLOUDINARY_CLOUD_NAME = "votre-cloud-name";
+  const CLOUDINARY_UPLOAD_PRESET = "votre-upload-preset";
+
+  async function uploaderVersCloudinary(fichier) {
+    const formData = new FormData();
+    formData.append("file", fichier);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "ac-amenagement");
+    const reponse = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+    if (!reponse.ok) throw new Error("Échec de l'upload.");
+    const data = await reponse.json();
+    return data.secure_url;
+  }
+
+  const zoneUpload = document.getElementById("zone-upload-collection");
+  const inputFichier = document.getElementById("fichier-collection");
+  zoneUpload.addEventListener("click", () => inputFichier.click());
+  inputFichier.addEventListener("change", async (e) => {
+    const fichier = e.target.files[0];
+    if (!fichier) return;
+    try {
+      zoneUpload.textContent = "Envoi en cours…";
+      imageEnCoursEdition = await uploaderVersCloudinary(fichier);
+      afficherApercuCollection();
+    } catch (err) {
+      alert("Upload impossible : vérifiez la configuration Cloudinary (voir README).");
+    } finally {
+      zoneUpload.textContent = "Glissez-déposez une image ici, ou cliquez pour parcourir";
+    }
+  });
+
+  function afficherApercuCollection() {
+    const conteneur = document.getElementById("apercu-collection");
+    conteneur.innerHTML = imageEnCoursEdition
+      ? `<div class="miniature-upload"><img src="${imageEnCoursEdition}" alt="Aperçu" /></div>`
+      : "";
+  }
+
+  function ouvrirFormulaire(collection) {
+    document.getElementById("titre-formulaire").textContent = collection ? `Modifier « ${collection.nom} »` : "Nouvelle collection";
+    document.getElementById("collection-id").value = collection ? collection.id : "";
+    document.getElementById("collection-nom").value = collection ? collection.nom : "";
+    document.getElementById("collection-slug").value = collection ? collection.slug : "";
+    document.getElementById("collection-description").value = collection ? collection.description : "";
+    document.getElementById("collection-ordre").value = collection ? collection.ordre : donnees.collections.length;
+    document.getElementById("collection-visible").checked = collection ? collection.visible : true;
+    imageEnCoursEdition = collection ? collection.image : "";
+    afficherApercuCollection();
+    panneau.classList.remove("hidden");
+    panneau.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const id = document.getElementById("collection-id").value;
+    const slug = document.getElementById("collection-slug").value.trim();
+
+    const doublon = donnees.collections.find((c) => c.slug === slug && c.id !== id);
+    if (doublon) { alert("Ce slug est déjà utilisé par une autre collection."); return; }
+    if (!imageEnCoursEdition) { alert("Merci d'ajouter une image de couverture."); return; }
+
+    const valeurs = {
+      nom: document.getElementById("collection-nom").value.trim(),
+      slug,
+      description: document.getElementById("collection-description").value.trim(),
+      image: imageEnCoursEdition,
+      ordre: Number(document.getElementById("collection-ordre").value),
+      visible: document.getElementById("collection-visible").checked,
+    };
+
+    if (id) {
+      const index = donnees.collections.findIndex((c) => c.id === id);
+      donnees.collections[index] = { ...donnees.collections[index], ...valeurs };
+    } else {
+      donnees.collections.push({ id: "c-" + Date.now(), ...valeurs });
+    }
+    Donnees.sauvegarder(donnees);
+    panneau.classList.add("hidden");
+    rendre();
+  });
+
+  function supprimer(id, nom) {
+    const nbProduits = donnees.produits.filter((p) => donnees.collections.find((c) => c.id === id)?.slug === p.collectionSlug).length;
+    if (nbProduits > 0) { alert(`Impossible de supprimer : ${nbProduits} produit(s) dépendent encore de "${nom}".`); return; }
+    if (!confirm(`Supprimer définitivement la collection "${nom}" ?`)) return;
+    donnees.collections = donnees.collections.filter((c) => c.id !== id);
+    Donnees.sauvegarder(donnees);
+    rendre();
+  }
+
+  function basculerVisibilite(id) {
+    const c = donnees.collections.find((x) => x.id === id);
+    c.visible = !c.visible;
+    Donnees.sauvegarder(donnees);
+    rendre();
+  }
+
+  function deplacer(id, direction) {
+    const triees = donnees.collections.slice().sort((a, b) => a.ordre - b.ordre);
+    const index = triees.findIndex((c) => c.id === id);
+    const indexVoisin = direction === "haut" ? index - 1 : index + 1;
+    if (indexVoisin < 0 || indexVoisin >= triees.length) return;
+    const ordreTemp = triees[index].ordre;
+    triees[index].ordre = triees[indexVoisin].ordre;
+    triees[indexVoisin].ordre = ordreTemp;
+    Donnees.sauvegarder(donnees);
+    rendre();
+  }
+
+  function rendre() {
+    document.getElementById("compteur-collections").textContent = `${donnees.collections.length} collection(s)`;
+    const corps = document.getElementById("corps-table-collections");
+    corps.innerHTML = "";
+    const triees = donnees.collections.slice().sort((a, b) => a.ordre - b.ordre);
+
+    triees.forEach((c, i) => {
+      const nbProduits = donnees.produits.filter((p) => p.collectionSlug === c.slug).length;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><div class="flex gap-3" style="align-items:center;"><img class="miniature" src="${c.image}" alt="${c.nom}" />${c.nom}</div></td>
+        <td>${nbProduits}</td>
+        <td>
+          <button class="action-icone" data-action="haut" ${i === 0 ? "disabled" : ""}>↑</button>
+          <button class="action-icone" data-action="bas" ${i === triees.length - 1 ? "disabled" : ""}>↓</button>
+        </td>
+        <td><button class="action-icone" data-action="visibilite" style="width:auto;padding:0 0.5rem;">${c.visible ? "👁 Visible" : "🚫 Masquée"}</button></td>
+        <td class="text-center"><button class="action-icone" data-action="modifier">✎</button> <button class="action-icone" data-action="supprimer">🗑</button></td>`;
+
+      tr.querySelector('[data-action="haut"]').addEventListener("click", () => deplacer(c.id, "haut"));
+      tr.querySelector('[data-action="bas"]').addEventListener("click", () => deplacer(c.id, "bas"));
+      tr.querySelector('[data-action="visibilite"]').addEventListener("click", () => basculerVisibilite(c.id));
+      tr.querySelector('[data-action="modifier"]').addEventListener("click", () => ouvrirFormulaire(c));
+      tr.querySelector('[data-action="supprimer"]').addEventListener("click", () => supprimer(c.id, c.nom));
+      corps.appendChild(tr);
+    });
+  }
+
+  rendre();
+</script>
+</body>
+</html>

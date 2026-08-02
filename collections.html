@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title>Nos collections — AC Aménagement</title>
+<meta name="description" content="Découvrez les collections de claustras design sur mesure d'AC Aménagement." />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section>
+    <div class="container">
+      <p class="fil-ariane"><a href="index.html">Accueil</a> › <span class="actif">Collections</span></p>
+
+      <div class="section-tete reveal">
+        <p class="eyebrow">Catalogue</p>
+        <h1>Nos collections</h1>
+        <p class="texte-muted mt-4">Chaque collection incarne une identité graphique propre, déclinable en plusieurs matières, dimensions et coloris pour s'adapter à votre intérieur.</p>
+      </div>
+
+      <div class="grille grille-3" id="grille-collections"></div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  const donnees = Donnees.charger();
+  const grille = document.getElementById("grille-collections");
+  const visibles = donnees.collections.filter((c) => c.visible).sort((a, b) => a.ordre - b.ordre);
+
+  if (visibles.length === 0) {
+    grille.innerHTML = '<p class="texte-muted">Aucune collection disponible pour le moment.</p>';
+  } else {
+    visibles.forEach((c, i) => {
+      const el = document.createElement("a");
+      el.href = `collection.html?slug=${c.slug}`;
+      el.className = "carte-collection reveal";
+      el.style.transitionDelay = `${i * 0.06}s`;
+      el.innerHTML = `
+        <img src="${c.image}" alt="${c.nom}" loading="lazy" />
+        <div class="carte-collection-contenu">
+          <div><h3>${c.nom}</h3><p>${c.description}</p></div>
+          <span class="carte-fleche">→</span>
+        </div>`;
+      grille.appendChild(el);
+    });
+  }
+  window.initReveal();
+</script>
+</body>
+</html>

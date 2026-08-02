@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title>AC Aménagement — Aménagement intérieur, cuisines, dressings & claustras sur mesure</title>
+<meta name="description" content="AC Aménagement conçoit, fabrique et pose vos aménagements intérieurs sur mesure : cuisines, dressings, et claustras design à découpe CNC. De la conception à la pose, un savoir-faire artisanal français." />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .hero {
+    position: relative; min-height: 92vh; display: flex; align-items: center; justify-content: center;
+    text-align: center; overflow: hidden;
+  }
+  .hero-contenu { max-width: 48rem; padding: 0 1.5rem; }
+  .hero h1 { font-size: clamp(2.25rem, 7vw, 4.5rem); line-height: 1.1; margin-bottom: 1.25rem; }
+  .hero p { color: rgba(250,250,248,0.7); font-size: 1.125rem; max-width: 34rem; margin: 0 auto 2.25rem; }
+  .hero-boutons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  /* Sur mobile, un bloc plus compact laisse deviner la section suivante
+     en bas d'écran — ça donne envie de continuer à scroller. */
+  @media (max-width: 640px) {
+    .hero { min-height: 72vh; padding-top: 2rem; padding-bottom: 2rem; }
+    .hero-contenu p:first-child { font-size: 1.6rem !important; margin-bottom: 0.75rem !important; }
+    .hero .eyebrow { margin-bottom: 0.6rem; }
+    .hero h1 { font-size: clamp(1.75rem, 8vw, 2.5rem); margin-bottom: 0.85rem; }
+    .hero p:not(.eyebrow) { font-size: 1rem; margin-bottom: 1.5rem; }
+  }
+  .cta-finale { text-align: center; background: radial-gradient(circle at 50% 0%, rgba(201,166,107,0.15), transparent 60%); }
+  .inspiration-carte {
+    position: relative; aspect-ratio: 4/5; border-radius: var(--radius); overflow: hidden;
+    display: flex; align-items: flex-end; background: var(--anthracite);
+  }
+  .inspiration-carte img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s var(--ease); }
+  .inspiration-carte:hover img { transform: scale(1.05); }
+  .inspiration-carte::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,0.85) 100%);
+  }
+  .inspiration-carte span {
+    position: relative; z-index: 1; padding: 1.5rem; font-family: 'Fraunces', serif; font-size: 1.25rem;
+  }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main id="contenu-principal">
+
+  <section class="hero section-fond-anime" style="padding:0;">
+    <canvas class="canvas-fond-anime" aria-hidden="true"></canvas>
+    <div class="motif-fond-anime" aria-hidden="true"></div>
+    <div class="voile-fond-anime" aria-hidden="true"></div>
+    <div class="hero-contenu contenu-fond-anime">
+      <p class="reveal-net" style="font-family:'Fraunces',serif;font-size:clamp(2rem,6vw,3.5rem);margin-bottom:1.25rem;">AC <span class="gold-text">Aménagement</span></p>
+      <p class="eyebrow reveal-net" style="transition-delay:0.1s;">Conception, fabrication & pose sur mesure</p>
+      <h1 class="reveal-net" style="transition-delay:0.2s;">Votre intérieur pensé, fabriqué et posé par nos soins.</h1>
+      <p class="reveal-net" style="transition-delay:0.32s;">Cuisines, dressings, aménagements intérieurs sur mesure — et nos claustras design à découpe CNC pour sublimer chaque pièce. Un savoir-faire artisanal, de la conception à la pose.</p>
+      <div class="hero-boutons reveal">
+        <a href="devis.html" class="btn btn-secondaire">Demander un devis</a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="section-tete reveal">
+        <p class="eyebrow">Inspiration</p>
+        <h2>Cuisines, dressings, claustras : de quoi vous inspirer.</h2>
+      </div>
+      <div class="grille grille-3">
+        <div class="inspiration-carte reveal">
+          <img src="images/realisations/cuisine.png" alt="Inspiration cuisine sur mesure" loading="lazy" />
+          <span>Cuisine</span>
+        </div>
+        <div class="inspiration-carte reveal" style="transition-delay:0.06s;">
+          <img src="images/realisations/dressing.png" alt="Inspiration dressing sur mesure" loading="lazy" />
+          <span>Dressing</span>
+        </div>
+        <div class="inspiration-carte reveal" style="transition-delay:0.12s;">
+          <img src="images/realisations/claustra.png" alt="Inspiration claustra" loading="lazy" />
+          <span>Claustra</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background: rgba(255,255,255,0.02);">
+    <div class="container">
+      <div class="section-tete text-center reveal" style="margin-left:auto;margin-right:auto;">
+        <p class="eyebrow">Ils nous font confiance</p>
+        <h2>La parole à nos clients.</h2>
+      </div>
+      <div class="grille grille-3" id="grille-avis"></div>
+    </div>
+  </section>
+
+  <section class="cta-finale">
+    <div class="container text-center reveal">
+      <h2 style="max-width:36rem;margin:0 auto 1rem;">Un projet en tête ? Donnons-lui forme.</h2>
+      <p class="texte-muted" style="max-width:28rem;margin:0 auto 2rem;">De la première esquisse à la pose finale, notre atelier vous accompagne à chaque étape.</p>
+      <a href="devis.html" class="btn btn-primaire">Demander un devis gratuit →</a>
+    </div>
+  </section>
+
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/fond-anime.js"></script>
+<script>
+  const donnees = Donnees.charger();
+
+  const grilleAvis = document.getElementById("grille-avis");
+  donnees.avis.forEach((a, i) => {
+    const el = document.createElement("blockquote");
+    el.className = "carte reveal";
+    el.style.transitionDelay = `${i * 0.08}s`;
+    const etoiles = "★".repeat(a.note) + "☆".repeat(5 - a.note);
+    el.innerHTML = `
+      <div style="color:var(--or);letter-spacing:2px;">${etoiles}</div>
+      <p class="mt-4" style="font-size:0.9rem;line-height:1.6;">${a.message}</p>
+      <footer class="mt-6 texte-muted" style="font-size:0.85rem;">${a.auteur}${a.ville ? " — " + a.ville : ""}</footer>`;
+    grilleAvis.appendChild(el);
+  });
+
+  // Relance l'animation de scroll-reveal pour les cartes injectées ci-dessus.
+  window.initReveal();
+</script>
+</body>
+</html>

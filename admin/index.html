@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="../images/logo.png" />
+<title>Tableau de bord — Admin AC Aménagement</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+
+<div class="admin-corps" id="admin-layout">
+  <main class="admin-contenu">
+    <div class="flex" style="justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1 style="font-size:1.75rem;">Tableau de bord</h1>
+        <p class="texte-muted mt-2">Vue d'ensemble de l'activité du site (données de ce navigateur).</p>
+      </div>
+      <button class="btn btn-secondaire btn-sm" id="btn-reinitialiser">Réinitialiser les données par défaut</button>
+    </div>
+    <p class="texte-muted mt-2" style="font-size:0.8rem;">⚠️ Ce navigateur garde en mémoire (localStorage) les dernières données chargées : si vous ne voyez pas vos derniers changements de <code>js/data.js</code> (nouveaux produits, noms...), cliquez ici pour repartir des valeurs par défaut du fichier.</p>
+
+    <div class="grille grille-3 mt-8">
+      <div class="stat-carte"><p class="texte-muted" style="font-size:0.85rem;">Collections</p><p class="valeur" id="stat-collections">0</p></div>
+      <div class="stat-carte"><p class="texte-muted" style="font-size:0.85rem;">Produits</p><p class="valeur" id="stat-produits">0</p></div>
+      <div class="stat-carte"><p class="texte-muted" style="font-size:0.85rem;">Demandes de devis</p><p class="valeur" id="stat-devis">0</p></div>
+    </div>
+
+    <div class="grille grille-2 mt-8">
+      <div class="carte">
+        <h2 style="font-size:1.1rem;">Derniers produits</h2>
+        <div id="liste-derniers-produits" class="mt-4"></div>
+      </div>
+      <div class="carte">
+        <h2 style="font-size:1.1rem;">Dernières demandes de devis</h2>
+        <div id="liste-derniers-devis" class="mt-4"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../js/data.js"></script>
+<script src="../js/admin.js"></script>
+<script>
+  exigerConnexion();
+
+  document.getElementById("btn-reinitialiser").addEventListener("click", () => {
+    if (confirm("Réinitialiser toutes les données (collections, produits) aux valeurs par défaut de js/data.js ? Vos modifications faites dans ce back-office seront perdues.")) {
+      Donnees.reinitialiser();
+      location.reload();
+    }
+  });
+
+  const donnees = Donnees.charger();
+  document.getElementById("stat-collections").textContent = donnees.collections.length;
+  document.getElementById("stat-produits").textContent = donnees.produits.length;
+
+  const devis = JSON.parse(localStorage.getItem("ac_amenagement_devis") || "[]");
+  document.getElementById("stat-devis").textContent = devis.length;
+
+  const listeProduits = document.getElementById("liste-derniers-produits");
+  if (donnees.produits.length === 0) {
+    listeProduits.innerHTML = '<p class="texte-muted" style="font-size:0.9rem;">Aucun produit pour le moment.</p>';
+  } else {
+    donnees.produits.slice(-5).reverse().forEach((p) => {
+      const collection = donnees.collections.find((c) => c.slug === p.collectionSlug);
+      const ligne = document.createElement("div");
+      ligne.style.cssText = "display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.9rem;";
+      ligne.innerHTML = `<div><a href="produits.html">${p.nom}</a><p class="texte-muted" style="font-size:0.75rem;">${collection ? collection.nom : ""}</p></div><span>${Donnees.formatPrix(p.prix)}</span>`;
+      listeProduits.appendChild(ligne);
+    });
+  }
+
+  const listeDevis = document.getElementById("liste-derniers-devis");
+  if (devis.length === 0) {
+    listeDevis.innerHTML = '<p class="texte-muted" style="font-size:0.9rem;">Aucune demande pour le moment.</p>';
+  } else {
+    devis.slice(-5).reverse().forEach((d) => {
+      const ligne = document.createElement("div");
+      ligne.style.cssText = "display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.9rem;";
+      const date = new Date(d.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+      ligne.innerHTML = `<div><p>${d.prenom} ${d.nom}</p><p class="texte-muted" style="font-size:0.75rem;">${d.ville}</p></div><span class="texte-muted" style="font-size:0.8rem;">${date}</span>`;
+      listeDevis.appendChild(ligne);
+    });
+  }
+</script>
+</body>
+</html>

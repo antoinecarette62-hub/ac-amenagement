@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title>Contact — AC Aménagement</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .contact-grille { display: grid; gap: 4rem; grid-template-columns: 1fr; }
+  @media (min-width: 1024px) { .contact-grille { grid-template-columns: 1fr 1.3fr; } }
+  .coord-liste { list-style: none; margin-top: 2.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+  .coord-liste li { display: flex; gap: 1rem; align-items: flex-start; }
+  .coord-icone { width: 2.5rem; height: 2.5rem; border-radius: 999px; background: rgba(201,166,107,0.1); color: var(--or); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .coord-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section>
+    <div class="container">
+      <p class="fil-ariane"><a href="index.html">Accueil</a> › <span class="actif">Contact</span></p>
+
+      <div class="contact-grille">
+        <div class="reveal">
+          <p class="eyebrow">Contact</p>
+          <h1>Parlons-en.</h1>
+          <p class="texte-muted mt-4" style="max-width:22rem;">Une question sur un produit, un délai, une pose ? Pour une demande de devis chiffrée, préférez notre <a href="devis.html" style="color:var(--or);">formulaire de devis</a>.</p>
+
+          <ul class="coord-liste">
+            <li><span class="coord-icone">☎</span><div><p class="coord-label">Téléphone</p><p>06 45 38 13 00</p></div></li>
+            <li><span class="coord-icone">✉</span><div><p class="coord-label">Email</p><p>acamenagement@hotmail.com</p></div></li>
+            <li><span class="coord-icone">📍</span><div><p class="coord-label">Zone d'intervention</p><p>Hauts-de-France</p></div></li>
+            <li><span class="coord-icone">🕐</span><div><p class="coord-label">Horaires</p><p>Lun–Ven, 9h–18h</p></div></li>
+          </ul>
+        </div>
+
+        <div class="reveal" style="transition-delay:0.1s;" id="zone-formulaire-contact"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  const zone = document.getElementById("zone-formulaire-contact");
+  zone.innerHTML = `
+    <form id="form-contact" novalidate>
+      <div style="position:absolute;left:-9999px;" aria-hidden="true">
+        <label for="site-web">Ne pas remplir</label>
+        <input type="text" id="site-web" tabindex="-1" autocomplete="off" />
+      </div>
+      <div class="champ-ligne champ-ligne-2">
+        <div class="champ"><label for="nom">Nom</label><input id="nom" required minlength="2" /><p class="champ-erreur hidden" data-erreur="nom"></p></div>
+        <div class="champ"><label for="email">Email</label><input id="email" type="email" required /><p class="champ-erreur hidden" data-erreur="email"></p></div>
+      </div>
+      <div class="champ"><label for="sujet">Sujet</label><input id="sujet" required minlength="3" /><p class="champ-erreur hidden" data-erreur="sujet"></p></div>
+      <div class="champ"><label for="message">Message</label><textarea id="message" rows="5" required minlength="10"></textarea><p class="champ-erreur hidden" data-erreur="message"></p></div>
+      <button type="submit" class="btn btn-primaire btn-full">Envoyer le message</button>
+    </form>`;
+
+  document.getElementById("form-contact").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const siteWeb = document.getElementById("site-web").value;
+    const champs = ["nom", "email", "sujet", "message"];
+    let valide = true;
+    document.querySelectorAll(".champ-erreur").forEach((el) => el.classList.add("hidden"));
+    champs.forEach((id) => {
+      const input = document.getElementById(id);
+      if (!input.checkValidity()) {
+        valide = false;
+        const erreurEl = document.querySelector(`[data-erreur="${id}"]`);
+        erreurEl.textContent = input.validationMessage || "Ce champ est requis.";
+        erreurEl.classList.remove("hidden");
+      }
+    });
+    if (!valide) return;
+
+    if (!siteWeb) {
+      // ⚠️ Pas de vrai serveur : message conservé dans ce navigateur
+      // uniquement (localStorage), aucun email n'est réellement envoyé.
+      const messages = JSON.parse(localStorage.getItem("ac_amenagement_contact") || "[]");
+      messages.push({
+        nom: document.getElementById("nom").value,
+        email: document.getElementById("email").value,
+        sujet: document.getElementById("sujet").value,
+        message: document.getElementById("message").value,
+        date: new Date().toISOString(),
+      });
+      localStorage.setItem("ac_amenagement_contact", JSON.stringify(messages));
+    }
+
+    zone.innerHTML = `
+      <div class="carte text-center" style="border-color:rgba(201,166,107,0.3);background:rgba(201,166,107,0.05);">
+        <h3 style="font-size:1.5rem;">Message envoyé !</h3>
+        <p class="texte-muted mt-2">Nous vous répondrons dans les meilleurs délais.</p>
+      </div>`;
+  });
+</script>
+</body>
+</html>

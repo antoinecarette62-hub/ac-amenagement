@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title>Notre partenaire — AC Aménagement</title>
+<meta name="description" content="AC Aménagement travaille en partenariat avec SV Menuiserie pour la fabrication et la pose de vos aménagements intérieurs sur mesure." />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .partenaire-fond {
+    position: relative; overflow: hidden;
+  }
+  .partenaire-fond::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(135deg, rgba(201,166,107,0.06) 0px, rgba(201,166,107,0.06) 1px, transparent 1px, transparent 34px);
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, transparent 0%, transparent 20%, black 85%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, transparent 0%, transparent 20%, black 85%);
+  }
+  .partenaire-fond::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 60% 40% at 85% 10%, rgba(201,166,107,0.12), transparent 65%);
+  }
+  .partenaire-grille { display: grid; gap: 3rem; grid-template-columns: 1fr; align-items: center; }
+  @media (min-width: 1024px) { .partenaire-grille { grid-template-columns: 1.1fr 1fr; } }
+  .partenaire-logo { display: flex; justify-content: center; order: -1; }
+  @media (min-width: 1024px) { .partenaire-logo { order: 0; } }
+  .partenaire-logo img { width: 100%; max-width: 34rem; height: auto; }
+
+  .carousel-piste-cadre { position: relative; max-width: 44rem; margin: 0 auto; }
+  .carousel-piste {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    border-radius: 1rem; gap: 0; -ms-overflow-style: none; scrollbar-width: none;
+  }
+  .carousel-piste::-webkit-scrollbar { display: none; }
+  .carousel-piste img {
+    width: 100%; flex: 0 0 100%; scroll-snap-align: start;
+    aspect-ratio: 4/3; object-fit: contain;
+  }
+  .carousel-bouton {
+    position: absolute; top: 50%; transform: translateY(-50%); width: 2.75rem; height: 2.75rem;
+    border-radius: 999px; background: rgba(255,255,255,0.1); color: var(--ivoire);
+    display: flex; align-items: center; justify-content: center; font-size: 1.25rem; z-index: 2;
+  }
+  .carousel-bouton:hover { background: rgba(255,255,255,0.2); }
+  .carousel-precedent { left: 1rem; }
+  .carousel-suivant { right: 1rem; }
+  .carousel-points { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
+  .carousel-point { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: rgba(255,255,255,0.25); }
+  .carousel-point.actif { background: var(--or); }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="partenaire-fond">
+    <div class="container" style="position:relative;z-index:1;">
+      <p class="fil-ariane"><a href="index.html">Accueil</a> › <span class="actif">Partenaire</span></p>
+
+      <div class="partenaire-grille">
+        <div class="reveal">
+          <p class="eyebrow">Notre partenaire fabricant</p>
+          <h1>SV Menuiserie</h1>
+          <div class="mt-6" style="line-height:1.8;">
+            <p class="texte-muted">Derrière chacun de nos claustras se cache le savoir-faire d'un artisan passionné.</p>
+            <p class="texte-muted mt-6">Notre partenaire travaille le bois depuis toujours. Après avoir perfectionné son métier au fil des années, il a créé son entreprise il y a plus de 7 ans avec une ambition simple : fabriquer des réalisations sur mesure alliant qualité, précision et durabilité.</p>
+            <p class="texte-muted mt-6">Chaque claustra est conçu avec le plus grand soin, à partir de matériaux sélectionnés pour leur qualité. Grâce à son expérience et à sa maîtrise du travail du bois, chaque pièce bénéficie d'une finition irréprochable et d'une fabrication artisanale.</p>
+            <p class="texte-muted mt-6">En faisant confiance à notre entreprise, vous choisissez également un partenaire reconnu pour son expertise, son exigence et sa passion du bois. C'est cette collaboration qui nous permet de vous proposer des claustras uniques, fabriqués en France, pensés pour sublimer durablement votre intérieur.</p>
+          </div>
+        </div>
+        <div class="partenaire-logo reveal" style="transition-delay:0.1s;">
+          <img src="images/SV/logosansfond.png" alt="SV Menuiserie — L'art du sur-mesure" />
+        </div>
+      </div>
+
+      <div class="mt-8" id="bloc-carousel-sv" style="margin-top:5rem;display:none;">
+        <div class="section-tete reveal">
+          <p class="eyebrow">Ses réalisations</p>
+          <h2 style="font-size:1.75rem;">Quelques pièces fabriquées par SV Menuiserie</h2>
+        </div>
+        <div class="carousel-piste-cadre reveal">
+          <button class="carousel-bouton carousel-precedent" id="carousel-precedent" aria-label="Image précédente">‹</button>
+          <div class="carousel-piste" id="carousel-piste"></div>
+          <button class="carousel-bouton carousel-suivant" id="carousel-suivant" aria-label="Image suivante">›</button>
+        </div>
+        <div class="carousel-points" id="carousel-points"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  // Détecte automatiquement les photos déposées dans images/SV/realisations/
+  // (numérotées 1, 2, 3...) : pas besoin de retoucher ce fichier à chaque
+  // nouvel ajout, on essaie juste plusieurs extensions et on s'arrête au
+  // premier numéro manquant.
+  const DOSSIER_SV = "images/SV/realisation/";
+  const EXTENSIONS_SV = ["jpg", "jpeg", "png", "webp"];
+  const MAX_IMAGES_SV = 30;
+
+  function essayerImage(numero, index) {
+    return new Promise((resolve) => {
+      if (index >= EXTENSIONS_SV.length) return resolve(null);
+      const img = new Image();
+      const src = `${DOSSIER_SV}r${numero}.${EXTENSIONS_SV[index]}`;
+      img.onload = () => resolve(src);
+      img.onerror = () => resolve(essayerImage(numero, index + 1));
+      img.src = src;
+    });
+  }
+
+  (async () => {
+    const images = [];
+    for (let n = 1; n <= MAX_IMAGES_SV; n++) {
+      const src = await essayerImage(n, 0);
+      if (src) images.push(src);
+      else if (n > 1) break; // s'arrête au premier trou après au moins une image
+    }
+    if (images.length === 0) return;
+
+    document.getElementById("bloc-carousel-sv").style.display = "";
+    const piste = document.getElementById("carousel-piste");
+    const points = document.getElementById("carousel-points");
+    piste.innerHTML = images.map((src, i) => `<img src="${src}" alt="Réalisation SV Menuiserie ${i + 1}" loading="lazy" />`).join("");
+    points.innerHTML = images.map((_, i) => `<button class="carousel-point${i === 0 ? " actif" : ""}" data-index="${i}" aria-label="Image ${i + 1}"></button>`).join("");
+
+    const pointsEl = Array.from(points.querySelectorAll(".carousel-point"));
+    function allerA(i) {
+      piste.scrollTo({ left: i * piste.clientWidth, behavior: "smooth" });
+    }
+    pointsEl.forEach((btn, i) => btn.addEventListener("click", () => allerA(i)));
+    document.getElementById("carousel-precedent").addEventListener("click", () => {
+      const actuel = Math.round(piste.scrollLeft / piste.clientWidth);
+      allerA((actuel - 1 + images.length) % images.length);
+    });
+    document.getElementById("carousel-suivant").addEventListener("click", () => {
+      const actuel = Math.round(piste.scrollLeft / piste.clientWidth);
+      allerA((actuel + 1) % images.length);
+    });
+    piste.addEventListener("scroll", () => {
+      const actif = Math.round(piste.scrollLeft / piste.clientWidth);
+      pointsEl.forEach((btn, i) => btn.classList.toggle("actif", i === actif));
+    });
+
+    window.initReveal();
+  })();
+</script>
+</body>
+</html>

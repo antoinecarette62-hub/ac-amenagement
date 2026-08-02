@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title id="titre-page">Collection — AC Aménagement</title>
+<meta name="description" content="Découvrez les produits de cette collection de claustras sur mesure." />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .filtres { padding-bottom: 2rem; margin-bottom: 2.5rem; border-bottom: 1px solid var(--border); }
+  .filtres input[type="search"] { max-width: 22rem; }
+  .entete-collection { max-width: 42rem; margin-bottom: 3.5rem; }
+
+  /* Fond animé "organique" : quelques taches de couleur floutées qui
+     dérivent lentement derrière la grille de produits, visibles dans les
+     espaces entre les cartes. Injecté uniquement sur la collection Organique. */
+  .zone-produits { position: relative; }
+  .fond-organique { position: absolute; inset: -2rem; z-index: 0; overflow: hidden; pointer-events: none; border-radius: 2rem; }
+  .fond-organique .tache {
+    position: absolute; width: 42%; aspect-ratio: 1/1; border-radius: 999px; filter: blur(70px); opacity: 0.55;
+    animation: derive-organique 22s ease-in-out infinite alternate;
+  }
+  .fond-organique .tache-1 { top: -10%; left: -5%; background: radial-gradient(circle, var(--or-light), transparent 70%); animation-duration: 24s; }
+  .fond-organique .tache-2 { top: 30%; right: -8%; background: radial-gradient(circle, var(--or), transparent 70%); animation-duration: 28s; animation-delay: -6s; }
+  .fond-organique .tache-3 { bottom: -12%; left: 25%; background: radial-gradient(circle, var(--or-dark), transparent 70%); animation-duration: 20s; animation-delay: -12s; }
+  @keyframes derive-organique {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(6%, 8%) scale(1.15); }
+    100% { transform: translate(-6%, -4%) scale(0.95); }
+  }
+  .grille-produits-relative { position: relative; z-index: 1; }
+  @media (prefers-reduced-motion: reduce) { .fond-organique .tache { animation: none; } }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section>
+    <div class="container">
+      <p class="fil-ariane">
+        <a href="index.html">Accueil</a> › <a href="collections.html">Collections</a> › <span class="actif" id="fil-nom-collection">…</span>
+      </p>
+
+      <div class="reveal entete-collection" id="entete-collection"></div>
+
+      <div class="filtres reveal">
+        <div style="position:relative;max-width:22rem;">
+          <input type="search" id="recherche" placeholder="Rechercher un produit…" />
+        </div>
+      </div>
+
+      <div class="zone-produits" id="zone-produits">
+        <div class="grille grille-3 grille-produits-relative" id="grille-produits"></div>
+      </div>
+      <p class="texte-muted mt-8 hidden" id="message-vide">Aucun produit ne correspond à ces critères pour le moment.</p>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const slugCollection = params.get("slug");
+  const donnees = Donnees.charger();
+  const collection = donnees.collections.find((c) => c.slug === slugCollection && c.visible);
+
+  if (!collection) {
+    document.querySelector("main .container").innerHTML =
+      '<p class="texte-muted">Collection introuvable. <a href="collections.html" style="color:var(--or);">Retour aux collections</a></p>';
+  } else {
+    document.title = `${collection.nom} — AC Aménagement`;
+    document.getElementById("fil-nom-collection").textContent = collection.nom;
+    // Fond animé (taches floutées qui dérivent) réservé à la collection
+    // Organique, pour appuyer visuellement son identité fluide/organique.
+    if (slugCollection === "organique") {
+      document.getElementById("zone-produits").insertAdjacentHTML("afterbegin", `
+        <div class="fond-organique" aria-hidden="true">
+          <div class="tache tache-1"></div>
+          <div class="tache tache-2"></div>
+          <div class="tache tache-3"></div>
+        </div>`);
+    }
+
+    document.getElementById("entete-collection").innerHTML = `
+      <p class="eyebrow">Collection</p>
+      <h1>${collection.nom}</h1>
+      <p class="texte-muted mt-4">${collection.description}</p>`;
+
+    const produitsCollection = donnees.produits.filter((p) => p.collectionSlug === slugCollection && p.visible);
+
+    const inputRecherche = document.getElementById("recherche");
+    const grille = document.getElementById("grille-produits");
+    const messageVide = document.getElementById("message-vide");
+
+    function rendre() {
+      let liste = produitsCollection.slice();
+
+      const recherche = inputRecherche.value.trim().toLowerCase();
+      if (recherche) {
+        liste = liste.filter((p) => p.nom.toLowerCase().includes(recherche) || p.description.toLowerCase().includes(recherche));
+      }
+
+      grille.innerHTML = "";
+      messageVide.classList.toggle("hidden", liste.length > 0);
+
+      liste.forEach((p, i) => {
+        const el = document.createElement("a");
+        el.href = `produit.html?slug=${p.slug}`;
+        el.className = "carte-produit reveal";
+        el.style.transitionDelay = `${i * 0.05}s`;
+        el.innerHTML = `
+          <div class="carte-produit-image"><img src="${p.imagePrincipale}" alt="${p.nom}" loading="lazy" /></div>
+          <div class="carte-produit-corps">
+            <h3 class="carte-produit-nom">${p.nom}</h3>
+          </div>`;
+        grille.appendChild(el);
+      });
+      window.initReveal();
+    }
+
+    inputRecherche.addEventListener("input", rendre);
+    rendre();
+  }
+</script>
+</body>
+</html>
