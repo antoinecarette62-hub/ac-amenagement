@@ -278,8 +278,11 @@
     // Équivalent tactile (tablette/mobile) : faire glisser le doigt sur la
     // claustra incline l'objet et déplace la lumière, comme la souris.
     relief.addEventListener("touchstart", (e) => {
-      if (e.touches.length === 1) survoler(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
+      if (e.touches.length === 1) {
+        e.preventDefault();
+        survoler(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
     relief.addEventListener("touchmove", (e) => {
       if (e.touches.length === 1) {
         e.preventDefault();
