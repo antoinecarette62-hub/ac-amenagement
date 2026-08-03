@@ -11,7 +11,7 @@
    côté serveur (comme dans la version Next.js/Prisma du projet).
    ============================================================ */
 
-const MOT_DE_PASSE_ADMIN = "ChangeMoi123!";
+const MOT_DE_PASSE_ADMIN = "13Veatresh!";
 const CLE_SESSION = "ac_amenagement_admin_connecte";
 
 function estConnecte() {
