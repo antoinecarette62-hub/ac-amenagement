@@ -21,6 +21,7 @@ async function estConnecte() {
   }
 }
 
+/** Retourne "ok", "mot-de-passe" (refusé par le serveur) ou "connexion" (serveur injoignable). */
 async function connecter(motDePasse) {
   try {
     const reponse = await fetch(`${WORKER_URL}/login`, {
@@ -29,9 +30,9 @@ async function connecter(motDePasse) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: motDePasse }),
     });
-    return reponse.ok;
+    return reponse.ok ? "ok" : "mot-de-passe";
   } catch (err) {
-    return false;
+    return "connexion";
   }
 }
 

@@ -33,11 +33,17 @@
   document.getElementById("form-login").addEventListener("submit", async (e) => {
     e.preventDefault();
     const motDePasse = document.getElementById("mot-de-passe").value;
-    if (await connecter(motDePasse)) {
+    const resultat = await connecter(motDePasse);
+    if (resultat === "ok") {
       location.href = "index.html";
-    } else {
-      document.getElementById("erreur-login").classList.remove("hidden");
+      return;
     }
+    const erreur = document.getElementById("erreur-login");
+    erreur.textContent =
+      resultat === "connexion"
+        ? "Connexion au serveur d'authentification impossible. Réessayez dans quelques instants."
+        : "Mot de passe incorrect.";
+    erreur.classList.remove("hidden");
   });
 </script>
 </body>
