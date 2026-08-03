@@ -3,16 +3,24 @@
    ------------------------------------------------------------
    Le mot de passe n'est plus stocké dans ce fichier : il est
    vérifié côté serveur par le Cloudflare Worker (variable
-   ADMIN_PASSWORD), qui renvoie un cookie de session signé si le
-   mot de passe est correct. Ce fichier ne fait qu'appeler le
-   Worker et suivre son verdict.
+   ADMIN_PASSWORD). Le Worker répond avec un jeton de session que
+   l'on stocke ici (sessionStorage) et qu'on renvoie nous-mêmes via
+   l'en-tête Authorization sur chaque appel — pas de cookie, car le
+   site (github.io) et le Worker (workers.dev) sont deux domaines
+   différents et les navigateurs bloquent de plus en plus les
+   cookies cross-site, même en SameSite=None.
    ============================================================ */
 
 const WORKER_URL = "https://ac-amenagement-admin.antoine-carette62.workers.dev";
+const CLE_JETON = "ac_amenagement_admin_jeton";
 
 async function estConnecte() {
+  const jeton = sessionStorage.getItem(CLE_JETON);
+  if (!jeton) return false;
   try {
-    const reponse = await fetch(`${WORKER_URL}/session`, { credentials: "include" });
+    const reponse = await fetch(`${WORKER_URL}/session`, {
+      headers: { Authorization: `Bearer ${jeton}` },
+    });
     if (!reponse.ok) return false;
     const donnees = await reponse.json();
     return !!donnees.authentifie;
@@ -26,22 +34,21 @@ async function connecter(motDePasse) {
   try {
     const reponse = await fetch(`${WORKER_URL}/login`, {
       method: "POST",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: motDePasse }),
     });
-    return reponse.ok ? "ok" : "mot-de-passe";
+    if (!reponse.ok) return "mot-de-passe";
+    const donnees = await reponse.json();
+    if (!donnees.token) return "connexion";
+    sessionStorage.setItem(CLE_JETON, donnees.token);
+    return "ok";
   } catch (err) {
     return "connexion";
   }
 }
 
-async function deconnecter() {
-  try {
-    await fetch(`${WORKER_URL}/logout`, { method: "POST", credentials: "include" });
-  } catch (err) {
-    // Même si l'appel échoue, on renvoie l'utilisateur vers le login.
-  }
+function deconnecter() {
+  sessionStorage.removeItem(CLE_JETON);
   location.href = "login.html";
 }
 
