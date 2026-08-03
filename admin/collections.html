@@ -105,10 +105,19 @@
     }
   });
 
+  // Les images sont enregistrées en chemin relatif à la racine du site
+  // (ex: "images/collections/Nature.png", utilisé tel quel par les pages
+  // publiques). Depuis /admin/, il faut remonter d'un niveau pour les
+  // afficher. Les URLs Cloudinary (http/https) restent inchangées.
+  function versCheminAdmin(chemin) {
+    if (!chemin || /^(https?:)?\/\//.test(chemin) || chemin.startsWith("data:")) return chemin;
+    return "../" + chemin;
+  }
+
   function afficherApercuCollection() {
     const conteneur = document.getElementById("apercu-collection");
     conteneur.innerHTML = imageEnCoursEdition
-      ? `<div class="miniature-upload"><img src="${imageEnCoursEdition}" alt="Aperçu" /></div>`
+      ? `<div class="miniature-upload"><img src="${versCheminAdmin(imageEnCoursEdition)}" alt="Aperçu" /></div>`
       : "";
   }
 
@@ -193,7 +202,7 @@
       const nbProduits = donnees.produits.filter((p) => p.collectionSlug === c.slug).length;
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><div class="flex gap-3" style="align-items:center;"><img class="miniature" src="${c.image}" alt="${c.nom}" />${c.nom}</div></td>
+        <td><div class="flex gap-3" style="align-items:center;"><img class="miniature" src="${versCheminAdmin(c.image)}" alt="${c.nom}" />${c.nom}</div></td>
         <td>${nbProduits}</td>
         <td>
           <button class="action-icone" data-action="haut" ${i === 0 ? "disabled" : ""}>↑</button>

@@ -155,12 +155,21 @@
     finally { zoneSecondaires.textContent = "Glissez-déposez des images ici, ou cliquez pour parcourir"; }
   });
 
+  // Les images sont enregistrées en chemin relatif à la racine du site
+  // (ex: "images/produits/nature-1.png", utilisé tel quel par les pages
+  // publiques). Depuis /admin/, il faut remonter d'un niveau pour les
+  // afficher. Les URLs Cloudinary (http/https) restent inchangées.
+  function versCheminAdmin(chemin) {
+    if (!chemin || /^(https?:)?\/\//.test(chemin) || chemin.startsWith("data:")) return chemin;
+    return "../" + chemin;
+  }
+
   function afficherApercus() {
     document.getElementById("apercu-principal").innerHTML = imagePrincipaleEdition
-      ? `<div class="miniature-upload"><img src="${imagePrincipaleEdition}" alt="Aperçu" /></div>` : "";
+      ? `<div class="miniature-upload"><img src="${versCheminAdmin(imagePrincipaleEdition)}" alt="Aperçu" /></div>` : "";
 
     document.getElementById("apercu-secondaires").innerHTML = imagesSecondairesEdition.map((url, i) => `
-      <div class="miniature-upload"><img src="${url}" alt="Aperçu ${i + 1}" /><button type="button" data-retirer="${i}">✕</button></div>`).join("");
+      <div class="miniature-upload"><img src="${versCheminAdmin(url)}" alt="Aperçu ${i + 1}" /><button type="button" data-retirer="${i}">✕</button></div>`).join("");
 
     document.querySelectorAll("[data-retirer]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -263,7 +272,7 @@
       const collection = donnees.collections.find((c) => c.slug === p.collectionSlug);
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><div class="flex gap-3" style="align-items:center;"><img class="miniature" src="${p.imagePrincipale}" alt="${p.nom}" />${p.nom}</div></td>
+        <td><div class="flex gap-3" style="align-items:center;"><img class="miniature" src="${versCheminAdmin(p.imagePrincipale)}" alt="${p.nom}" />${p.nom}</div></td>
         <td>${collection ? collection.nom : "—"}</td>
         <td>${Donnees.formatPrix(p.prix)}</td>
         <td><button class="action-icone" data-action="visibilite" style="width:auto;padding:0 0.5rem;">${p.visible ? "👁 Visible" : "🚫 Masqué"}</button></td>
