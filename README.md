@@ -49,11 +49,12 @@ Les collections et produits sont dans `js/data.js`. Pour changer les
 données **par défaut, pour tous les visiteurs**, il faut éditer ce
 fichier directement (pas d'interface no-code possible sans serveur).
 
-### Back-office : fonctionnel, mais PAS sécurisé et PAS partagé
-- Le mot de passe (`ChangeMoi123!` par défaut, dans `js/admin.js`) est
-  **visible en clair** par quiconque inspecte le code de la page. Ce
-  n'est pas une vraie protection, juste un filtre pour éviter les
-  visiteurs occasionnels.
+### Back-office : login vérifié côté serveur, mais données PAS partagées
+- Le mot de passe n'est plus stocké dans le code JS : il est comparé
+  côté serveur par un Cloudflare Worker (`ADMIN_PASSWORD`), qui renvoie
+  un cookie de session signé si c'est correct. Voir `WORKER_URL` en
+  haut de `js/admin.js` — à mettre à jour avec l'URL réelle du Worker
+  une fois déployé, sinon le login ne fonctionne pas.
 - Les modifications faites dans l'admin (ajouter/modifier un produit,
   masquer une collection…) sont enregistrées dans le **localStorage du
   navigateur utilisé**. Ouvrez le site sur un autre appareil ou un autre

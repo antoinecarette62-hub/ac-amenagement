@@ -1,39 +1,53 @@
 /* ============================================================
-   AC AMÉNAGEMENT — Back-office (démo)
+   AC AMÉNAGEMENT — Back-office
    ------------------------------------------------------------
-   ⚠️ AVERTISSEMENT DE SÉCURITÉ IMPORTANT
-   Ce "login" est un gate purement côté client, pour la démo.
-   Le mot de passe est visible en clair dans ce fichier JS, que
-   n'importe qui peut lire depuis le navigateur (Ctrl+U). Il
-   n'y a AUCUNE vraie sécurité ici — ne jamais utiliser cette
-   page pour protéger de vraies données sensibles. Pour un vrai
-   site en production, il faut un serveur avec une authentification
-   côté serveur (comme dans la version Next.js/Prisma du projet).
+   Le mot de passe n'est plus stocké dans ce fichier : il est
+   vérifié côté serveur par le Cloudflare Worker (variable
+   ADMIN_PASSWORD), qui renvoie un cookie de session signé si le
+   mot de passe est correct. Ce fichier ne fait qu'appeler le
+   Worker et suivre son verdict.
    ============================================================ */
 
-const MOT_DE_PASSE_ADMIN = "13Veatresh!";
-const CLE_SESSION = "ac_amenagement_admin_connecte";
+// ⚠️ À remplacer par l'URL réelle du Worker une fois déployé sur Cloudflare.
+const WORKER_URL = "https://TON-WORKER.workers.dev";
 
-function estConnecte() {
-  return sessionStorage.getItem(CLE_SESSION) === "oui";
-}
-
-function connecter(motDePasse) {
-  if (motDePasse === MOT_DE_PASSE_ADMIN) {
-    sessionStorage.setItem(CLE_SESSION, "oui");
-    return true;
+async function estConnecte() {
+  try {
+    const reponse = await fetch(`${WORKER_URL}/session`, { credentials: "include" });
+    if (!reponse.ok) return false;
+    const donnees = await reponse.json();
+    return !!donnees.authentifie;
+  } catch (err) {
+    return false;
   }
-  return false;
 }
 
-function deconnecter() {
-  sessionStorage.removeItem(CLE_SESSION);
+async function connecter(motDePasse) {
+  try {
+    const reponse = await fetch(`${WORKER_URL}/login`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: motDePasse }),
+    });
+    return reponse.ok;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function deconnecter() {
+  try {
+    await fetch(`${WORKER_URL}/logout`, { method: "POST", credentials: "include" });
+  } catch (err) {
+    // Même si l'appel échoue, on renvoie l'utilisateur vers le login.
+  }
   location.href = "login.html";
 }
 
 /** Doit être appelé en haut de chaque page admin (sauf login.html). */
-function exigerConnexion() {
-  if (!estConnecte()) {
+async function exigerConnexion() {
+  if (!(await estConnecte())) {
     location.href = "login.html";
   }
 }

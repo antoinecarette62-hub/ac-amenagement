@@ -29,12 +29,12 @@
 <script src="../js/admin.js"></script>
 <script>
   // Si déjà connecté, on renvoie directement au tableau de bord.
-  if (estConnecte()) location.href = "index.html";
+  estConnecte().then((connecte) => { if (connecte) location.href = "index.html"; });
 
-  document.getElementById("form-login").addEventListener("submit", (e) => {
+  document.getElementById("form-login").addEventListener("submit", async (e) => {
     e.preventDefault();
     const motDePasse = document.getElementById("mot-de-passe").value;
-    if (connecter(motDePasse)) {
+    if (await connecter(motDePasse)) {
       location.href = "index.html";
     } else {
       document.getElementById("erreur-login").classList.remove("hidden");
