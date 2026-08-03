@@ -8,8 +8,7 @@
    Worker et suivre son verdict.
    ============================================================ */
 
-// ⚠️ À remplacer par l'URL réelle du Worker une fois déployé sur Cloudflare.
-const WORKER_URL = "https://TON-WORKER.workers.dev";
+const WORKER_URL = "https://ac-amenagement-admin.antoine-carette62.workers.dev";
 
 async function estConnecte() {
   try {
