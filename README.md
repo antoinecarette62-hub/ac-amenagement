@@ -1,4 +1,4 @@
-# AC Aménagement — Version HTML / CSS / JavaScript pur
+# Ac Ligna — Version HTML / CSS / JavaScript pur
 
 Version 100% statique du site, sans Node.js, sans base de données, sans
 serveur. Ouvrez `index.html` dans un navigateur, ou hébergez le dossier

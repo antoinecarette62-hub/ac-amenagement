@@ -1,5 +1,5 @@
 /* ============================================================
-   AC AMÉNAGEMENT — Layout partagé (header + footer)
+   AC LIGNA — Layout partagé (header + footer)
    Injecté dans <div id="site-header"></div> et
    <div id="site-footer"></div> présents sur chaque page, pour
    éviter de dupliquer le HTML de la nav/footer partout.
@@ -23,7 +23,7 @@ function construireHeader() {
     <nav class="nav" id="nav-principale">
       <div class="container">
         <a href="index.html" class="nav-logo">
-          <img src="images/logo.png" alt="AC Aménagement" width="40" height="40" style="border-radius:999px;" />
+          <img src="images/logo.png" alt="Ac Ligna" width="40" height="40" style="border-radius:999px;" />
         </a>
         <div class="nav-liens">${liens}</div>
         <div class="nav-droite">
@@ -69,7 +69,7 @@ function construireFooter() {
         </div>
       </div>
       <div class="container footer-bas">
-        <p>&copy; ${new Date().getFullYear()} AC Aménagement. Tous droits réservés.</p>
+        <p>&copy; ${new Date().getFullYear()} Ac Ligna. Tous droits réservés.</p>
         <div class="flex gap-3"><a href="mentions-legales.html">Mentions légales</a><a href="confidentialite.html">Confidentialité</a></div>
       </div>
     </footer>`;

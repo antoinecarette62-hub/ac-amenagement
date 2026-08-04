@@ -1,5 +1,5 @@
 /* ============================================================
-   AC AMÉNAGEMENT — Données du site
+   AC LIGNA — Données du site
    ------------------------------------------------------------
    ⚠️ Pas de base de données ici : ces tableaux JavaScript sont
    la "source de vérité" par défaut. L'admin (voir /admin) peut
@@ -67,22 +67,22 @@ const DONNEES_PAR_DEFAUT = {
   realisations: [
     { id: "r1", titre: "Cuisine ouverte à Lille", slug: "cuisine-lille", categorie: "CUISINE", ville: "Lille",
       imageAvant: "images/realisations/1-avant.jpg", imageApres: "images/realisations/1-apres.jpg",
-      description: "Réalisation sur mesure : conception, fabrication et pose par AC Aménagement." },
+      description: "Réalisation sur mesure : conception, fabrication et pose par Ac Ligna." },
     { id: "r2", titre: "Claustra salon à Lens", slug: "claustra-lens", categorie: "SALON", ville: "Lens",
       imageAvant: "images/realisations/2-avant.jpg", imageApres: "images/realisations/2-apres.jpg",
-      description: "Réalisation sur mesure : conception, fabrication et pose par AC Aménagement." },
+      description: "Réalisation sur mesure : conception, fabrication et pose par Ac Ligna." },
     { id: "r3", titre: "Entrée sur mesure à Arras", slug: "entree-arras", categorie: "ENTREE", ville: "Arras",
       imageAvant: "images/realisations/3-avant.jpg", imageApres: "images/realisations/3-apres.jpg",
-      description: "Réalisation sur mesure : conception, fabrication et pose par AC Aménagement." },
+      description: "Réalisation sur mesure : conception, fabrication et pose par Ac Ligna." },
     { id: "r4", titre: "Garde-corps escalier à Béthune", slug: "escalier-bethune", categorie: "ESCALIER", ville: "Béthune",
       imageAvant: "images/realisations/4-avant.jpg", imageApres: "images/realisations/4-apres.jpg",
-      description: "Réalisation sur mesure : conception, fabrication et pose par AC Aménagement." },
+      description: "Réalisation sur mesure : conception, fabrication et pose par Ac Ligna." },
     { id: "r5", titre: "Bureau cloisonné à Douai", slug: "bureau-douai", categorie: "BUREAU", ville: "Douai",
       imageAvant: "images/realisations/5-avant.jpg", imageApres: "images/realisations/5-apres.jpg",
-      description: "Réalisation sur mesure : conception, fabrication et pose par AC Aménagement." },
+      description: "Réalisation sur mesure : conception, fabrication et pose par Ac Ligna." },
     { id: "r6", titre: "Accueil showroom professionnel", slug: "showroom-lievin", categorie: "PROFESSIONNEL", ville: "Liévin",
       imageAvant: "images/realisations/6-avant.jpg", imageApres: "images/realisations/6-apres.jpg",
-      description: "Réalisation sur mesure : conception, fabrication et pose par AC Aménagement." },
+      description: "Réalisation sur mesure : conception, fabrication et pose par Ac Ligna." },
   ],
 
   avis: [

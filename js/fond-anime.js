@@ -1,5 +1,5 @@
 /* ============================================================
-   AC AMÉNAGEMENT — Fond animé partagé
+   AC LIGNA — Fond animé partagé
    ------------------------------------------------------------
    Dégradé fluide généré par déplacement de domaine (calculé pixel
    par pixel sur un canevas réduit puis remis à l'échelle), dans

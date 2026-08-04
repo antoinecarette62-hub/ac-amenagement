@@ -1,5 +1,5 @@
 /* ============================================================
-   AC AMÉNAGEMENT — Back-office
+   AC LIGNA — Back-office
    ------------------------------------------------------------
    Le mot de passe n'est plus stocké dans ce fichier : il est
    vérifié côté serveur par le Cloudflare Worker (variable
@@ -73,11 +73,11 @@ function construireSidebarAdmin() {
 
   return `
     <div class="admin-topbar">
-      <a href="index.html" class="nav-logo">AC <span class="gold-text">Admin</span></a>
+      <a href="index.html" class="nav-logo">Ac Ligna <span class="gold-text">Admin</span></a>
       <button id="admin-burger" aria-label="Ouvrir le menu">☰</button>
     </div>
     <aside class="admin-sidebar" id="admin-sidebar">
-      <a href="index.html" class="nav-logo admin-sidebar-logo">AC <span class="gold-text">Admin</span></a>
+      <a href="index.html" class="nav-logo admin-sidebar-logo">Ac Ligna <span class="gold-text">Admin</span></a>
       <nav class="admin-nav">${liens}</nav>
       <button class="btn btn-secondaire btn-sm mt-6" id="btn-deconnexion">Se déconnecter</button>
     </aside>`;
