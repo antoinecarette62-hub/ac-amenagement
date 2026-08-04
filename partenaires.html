@@ -56,6 +56,14 @@
     cursor: default;
     box-shadow: 0 35px 70px -18px rgba(201,166,107,0.3), 0 30px 60px -20px rgba(0,0,0,0.75);
   }
+  /* Survol d'une carte voisine (estompée) : la rendre nette et pleinement
+     visible pour la prévisualiser avant de cliquer. !important nécessaire
+     car l'opacité/le flou sont sinon fixés en style inline par le JS. */
+  .vitrine-carte:not(.vitrine-actif):hover {
+    opacity: 1 !important;
+    filter: none !important;
+    z-index: 9 !important;
+  }
   .vitrine-nav {
     position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
     width: 3rem; height: 3rem; border-radius: 999px;
