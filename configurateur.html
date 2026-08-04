@@ -143,20 +143,46 @@
 <script src="js/data.js"></script>
 <script src="js/layout.js"></script>
 <script>
-  /* ⚠️ Grille tarifaire volontairement simple et illustrative — voir
-     note dans le README. À remplacer par les vrais tarifs. */
-  const FORFAIT_FACONNAGE = 150;
-  const PRIX_PAR_M2 = { MDF: 180, CHENE: 340 };
   const LIBELLES_MATIERE_CONFIG = { MDF: "MDF", CHENE: "Bois massif" };
-  const SEUIL_EPAISSEUR_STANDARD = 18;
-  const MAJORATION_EPAISSEUR_PAR_MM = 4;
+
+  /* Barème tarifaire : une entrée par matière, chacune avec son propre
+     forfait de façonnage, son coefficient au m² et sa fonction de calcul.
+     Pour ajouter une matière (chêne massif à tarif dédié, Valchromat...),
+     il suffit d'ajouter une entrée ici — rien d'autre à toucher. */
+  const BAREME_TARIFAIRE = {
+    MDF: {
+      forfait: 150,
+      coefficientM2: 210,
+      calculer({ largeur, hauteur }) {
+        const surfaceM2 = (largeur / 100) * (hauteur / 100);
+        return this.forfait + surfaceM2 * this.coefficientM2;
+      },
+    },
+    CHENE: {
+      forfait: 150,
+      coefficientM2: 340,
+      seuilEpaisseurStandard: 18,
+      majorationEpaisseurParMm: 4,
+      calculer({ largeur, hauteur, epaisseur }) {
+        const surfaceM2 = (largeur / 100) * (hauteur / 100);
+        const surepaisseur = Math.max(0, epaisseur - this.seuilEpaisseurStandard);
+        const majoration = surepaisseur * this.majorationEpaisseurParMm * surfaceM2;
+        return this.forfait + surfaceM2 * this.coefficientM2 + majoration;
+      },
+    },
+  };
+
+  /* Arrondit au prix se terminant par 9 immédiatement supérieur
+     (ex : 486 € → 489 €, 642 € → 649 €). */
+  function arrondirA9(prixBrut) {
+    const entier = Math.ceil(prixBrut);
+    const reste = entier % 10;
+    return reste === 9 ? entier : entier - reste + 9;
+  }
 
   function calculerPrix({ largeur, hauteur, epaisseur, matiere }) {
-    const surfaceM2 = (largeur / 100) * (hauteur / 100);
-    const prixSurface = surfaceM2 * PRIX_PAR_M2[matiere];
-    const surepaisseur = Math.max(0, epaisseur - SEUIL_EPAISSEUR_STANDARD);
-    const majoration = surepaisseur * MAJORATION_EPAISSEUR_PAR_MM * surfaceM2;
-    return Math.round(FORFAIT_FACONNAGE + prixSurface + majoration);
+    const bareme = BAREME_TARIFAIRE[matiere] || BAREME_TARIFAIRE.MDF;
+    return arrondirA9(bareme.calculer({ largeur, hauteur, epaisseur }));
   }
 
   const donnees = Donnees.charger();
@@ -176,7 +202,7 @@
     largeur: produitInitial ? produitInitial.largeur : 100,
     hauteur: produitInitial ? produitInitial.hauteur : 200,
     epaisseur: produitInitial ? produitInitial.epaisseur : 18,
-    matiere: (produitInitial && PRIX_PAR_M2[produitInitial.matiere]) ? produitInitial.matiere : "MDF",
+    matiere: (produitInitial && BAREME_TARIFAIRE[produitInitial.matiere]) ? produitInitial.matiere : "MDF",
   };
   etat.produit = produitInitial || premierProduitDe(etat.collection ? etat.collection.slug : null);
 
@@ -230,7 +256,7 @@
       etat.produit = p; rendre();
     });
 
-    construirePastilles("pastilles-matiere", Object.keys(PRIX_PAR_M2), (m) => LIBELLES_MATIERE_CONFIG[m], etat.matiere, (m) => {
+    construirePastilles("pastilles-matiere", Object.keys(BAREME_TARIFAIRE), (m) => LIBELLES_MATIERE_CONFIG[m], etat.matiere, (m) => {
       etat.matiere = m; rendre();
     });
 
