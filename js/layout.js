@@ -62,7 +62,7 @@ function construireFooter() {
             <h3>Contact</h3>
             <ul>
               <li>06 45 38 13 00</li>
-              <li>acamenagement@hotmail.com</li>
+              <li>ac.ligna@hotmail.com</li>
               <li>Hauts-de-France</li>
             </ul>
           </div>
