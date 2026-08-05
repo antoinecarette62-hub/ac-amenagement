@@ -28,8 +28,8 @@
   .partenaire-logo img { width: 100%; max-width: 34rem; height: auto; }
 
   /* Galerie des réalisations SV : grille en quinconce (pas de carrousel).
-     Les photos s'affichent toutes directement, avec un léger décalage
-     vertical alterné et des formats variés pour un rendu plus
+     Les photos s'affichent toutes directement, toutes au même format,
+     avec un léger décalage vertical alterné pour un rendu plus
      architectural qu'une grille strictement alignée. Elles apparaissent
      en cascade au scroll via .reveal (voir js/layout.js). */
   .galerie-sv {
@@ -42,18 +42,39 @@
     position: relative; overflow: hidden; border-radius: 1rem;
     background: var(--anthracite); aspect-ratio: 3/4;
     box-shadow: 0 20px 45px -22px rgba(0,0,0,0.55);
+    cursor: zoom-in;
   }
   .galerie-sv-item img {
     width: 100%; height: 100%; object-fit: cover; display: block;
     transition: transform 0.8s var(--ease);
   }
   .galerie-sv-item:hover img { transform: scale(1.06); }
-  .galerie-sv-item:nth-child(3n) { aspect-ratio: 1/1; }
   @media (min-width: 640px) {
     .galerie-sv-item:nth-child(6n+2),
     .galerie-sv-item:nth-child(6n+6) { margin-top: 3rem; }
     .galerie-sv-item:nth-child(6n+4) { margin-top: -1.5rem; }
   }
+
+  /* Vue en grand, ouverte au double-clic/double-tap (pas au simple tap,
+     pour ne pas se déclencher par accident en scrollant sur mobile). */
+  .lightbox-sv {
+    position: fixed; inset: 0; z-index: 200; display: none;
+    align-items: center; justify-content: center; padding: 2rem;
+    background: rgba(6,6,6,0.92); backdrop-filter: blur(6px);
+    cursor: zoom-out;
+  }
+  .lightbox-sv.ouvert { display: flex; }
+  .lightbox-sv img {
+    max-width: min(92vw, 60rem); max-height: 88vh; border-radius: 0.75rem;
+    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.7); cursor: default;
+  }
+  .lightbox-sv-fermer {
+    position: absolute; top: 1.25rem; right: 1.5rem; width: 2.75rem; height: 2.75rem;
+    border-radius: 999px; background: rgba(255,255,255,0.1); color: var(--ivoire);
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    transition: background 0.25s ease;
+  }
+  .lightbox-sv-fermer:hover { background: rgba(255,255,255,0.2); }
 </style>
 </head>
 <body>
@@ -91,6 +112,11 @@
     </div>
   </section>
 </main>
+
+<div class="lightbox-sv" id="lightbox-sv" aria-hidden="true">
+  <button class="lightbox-sv-fermer" id="lightbox-sv-fermer" aria-label="Fermer">✕</button>
+  <img src="" alt="" id="lightbox-sv-image" />
+</div>
 
 <div id="site-footer"></div>
 
@@ -147,6 +173,38 @@
       .join("");
 
     window.initReveal();
+
+    // Vue en grand au double-clic (souris) / double-tap (tactile) — un
+    // simple tap/clic ne fait rien, pour éviter une ouverture accidentelle
+    // en scrollant sur mobile.
+    const lightbox = document.getElementById("lightbox-sv");
+    const lightboxImage = document.getElementById("lightbox-sv-image");
+
+    function ouvrirLightbox(src, alt) {
+      lightboxImage.src = src;
+      lightboxImage.alt = alt;
+      lightbox.classList.add("ouvert");
+      lightbox.setAttribute("aria-hidden", "false");
+    }
+    function fermerLightbox() {
+      lightbox.classList.remove("ouvert");
+      lightbox.setAttribute("aria-hidden", "true");
+    }
+    lightbox.addEventListener("click", (e) => { if (e.target === lightbox) fermerLightbox(); });
+    document.getElementById("lightbox-sv-fermer").addEventListener("click", fermerLightbox);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermerLightbox(); });
+
+    galerie.querySelectorAll(".galerie-sv-item").forEach((item) => {
+      const img = item.querySelector("img");
+      item.addEventListener("dblclick", () => ouvrirLightbox(img.src, img.alt));
+
+      let dernierTap = 0;
+      item.addEventListener("touchend", () => {
+        const maintenant = Date.now();
+        if (maintenant - dernierTap < 350) ouvrirLightbox(img.src, img.alt);
+        dernierTap = maintenant;
+      });
+    });
   })();
 </script>
 </body>
