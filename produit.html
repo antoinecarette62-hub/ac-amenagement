@@ -6,6 +6,7 @@
 <link rel="icon" type="image/png" href="images/logo.png" />
 <title id="titre-page">Produit — Ac Ligna</title>
 <meta name="description" content="Claustra sur mesure à découpe CNC, fabriqué par Ac Ligna. Personnalisez matière, dimensions et finitions dans le configurateur." />
+<link rel="canonical" id="lien-canonique" href="https://acligna.fr/produit.html" />
 <link rel="stylesheet" href="css/style.css" />
 <style>
   .fiche-produit { display: grid; gap: 3rem; grid-template-columns: 1fr; }
@@ -101,6 +102,24 @@
   } else {
     const collection = donnees.collections.find((c) => c.slug === produit.collectionSlug);
     document.title = `${produit.nom} — Ac Ligna`;
+    document.getElementById("lien-canonique").href = `https://acligna.fr/produit.html?slug=${produit.slug}`;
+
+    // Données structurées Product : pas de prix (l'offre affichée à
+    // l'utilisateur dépend du configurateur, pas d'un tarif fixe visible
+    // sur cette page — on ne déclare donc pas de champ "offers", pour
+    // rester cohérent avec ce que Google voit réellement sur la page).
+    const scriptProduit = document.createElement("script");
+    scriptProduit.type = "application/ld+json";
+    scriptProduit.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: produit.nom,
+      description: produit.description,
+      image: `https://acligna.fr/${produit.imagePrincipale}`,
+      category: collection.nom,
+      brand: { "@type": "Brand", name: "Ac Ligna" },
+    });
+    document.head.appendChild(scriptProduit);
 
     document.getElementById("fil-ariane").innerHTML = `
       <a href="index.html">Accueil</a> › <a href="collections.html">Collections</a> ›
