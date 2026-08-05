@@ -82,9 +82,24 @@
   .vitrine-compteur-actuel { font-size: 1.25rem; color: var(--or); }
   .vitrine-compteur-sep, .vitrine-compteur-total { font-size: 0.9rem; color: var(--muted); }
   @media (max-width: 640px) {
-    .vitrine-sv { height: 18rem; }
+    .vitrine-sv { height: 18rem; perspective: none; }
     .vitrine-carte { width: min(62vw, 18rem); }
     .vitrine-nav { width: 2.5rem; height: 2.5rem; font-size: 1.1rem; }
+
+    /* Sur mobile, un vrai défilement horizontal natif et continu — les
+       photos glissent au doigt sans à-coup, plutôt que le carrousel 3D
+       du bureau (cliquer/glisser pour "tourner" une carte à la fois). */
+    .vitrine-piste.mode-scroll {
+      position: static; display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+      scroll-behavior: smooth; gap: 1rem; align-items: center; height: 100%;
+      padding: 0 9%; -ms-overflow-style: none; scrollbar-width: none;
+    }
+    .vitrine-piste.mode-scroll::-webkit-scrollbar { display: none; }
+    .vitrine-piste.mode-scroll .vitrine-carte {
+      position: static; width: auto; flex: 0 0 82%; scroll-snap-align: center;
+      transform: none !important; opacity: 1 !important; filter: none !important;
+      pointer-events: auto !important;
+    }
   }
 </style>
 </head>
@@ -146,23 +161,31 @@
   const EXTENSIONS_SV = ["jpg", "jpeg", "png", "webp"];
   const MAX_IMAGES_SV = 30;
 
-  function essayerImage(numero, index) {
-    return new Promise((resolve) => {
-      if (index >= EXTENSIONS_SV.length) return resolve(null);
+  // Teste les extensions d'un numéro en parallèle (pas les unes après les
+  // autres) : nettement plus rapide, surtout en 4G/mobile où chaque essai
+  // séquentiel ajoutait un aller-retour réseau complet.
+  function essayerImage(numero) {
+    const tentative = (ext) => new Promise((resolve, reject) => {
       const img = new Image();
-      const src = `${DOSSIER_SV}r${numero}.${EXTENSIONS_SV[index]}`;
+      const src = `${DOSSIER_SV}r${numero}.${ext}`;
       img.onload = () => resolve(src);
-      img.onerror = () => resolve(essayerImage(numero, index + 1));
+      img.onerror = reject;
       img.src = src;
     });
+    return Promise.any(EXTENSIONS_SV.map(tentative)).catch(() => null);
   }
 
   (async () => {
+    // Tous les numéros sont testés en parallèle également, plutôt qu'un
+    // par un : le premier affichage n'attend plus la résolution complète
+    // de la série entière avant de commencer.
+    const resultats = await Promise.all(
+      Array.from({ length: MAX_IMAGES_SV }, (_, i) => essayerImage(i + 1))
+    );
     const images = [];
-    for (let n = 1; n <= MAX_IMAGES_SV; n++) {
-      const src = await essayerImage(n, 0);
+    for (const src of resultats) {
       if (src) images.push(src);
-      else if (n > 1) break; // s'arrête au premier trou après au moins une image
+      else if (images.length > 0) break; // s'arrête au premier trou après au moins une image
     }
     if (images.length === 0) return;
 
@@ -189,18 +212,30 @@
       return d;
     }
 
+    function estModeScroll() {
+      return window.innerWidth < 640;
+    }
+
     function positionnerCartes() {
-      const mobile = window.innerWidth < 640;
-      const decalX = mobile ? 52 : 46; // % de la largeur de carte
-      const rotation = mobile ? 18 : 30; // degrés
-      const echelle = mobile ? 0.72 : 0.78;
+      const modeScroll = estModeScroll();
+      piste.classList.toggle("mode-scroll", modeScroll);
+
+      if (modeScroll) {
+        cartes.forEach((carte) => carte.classList.toggle("vitrine-actif", Number(carte.dataset.index) === actif));
+        elCompteurActuel.textContent = String(actif + 1).padStart(2, "0");
+        return;
+      }
+
+      const decalX = 46; // % de la largeur de carte
+      const rotation = 30; // degrés
+      const echelle = 0.78;
 
       cartes.forEach((carte, i) => {
         const d = decalage(i);
         const abs = Math.abs(d);
         carte.classList.toggle("vitrine-actif", d === 0);
 
-        if (abs > (mobile ? 1 : 2)) {
+        if (abs > 2) {
           carte.style.opacity = "0";
           carte.style.pointerEvents = "none";
           carte.style.zIndex = "0";
@@ -224,6 +259,9 @@
     function allerA(i) {
       actif = (i + images.length) % images.length;
       positionnerCartes();
+      if (piste.classList.contains("mode-scroll")) {
+        cartes[actif].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
     }
 
     cartes.forEach((carte, i) => carte.addEventListener("click", () => { if (i !== actif) allerA(i); }));
@@ -235,9 +273,10 @@
       if (e.key === "ArrowRight") allerA(actif + 1);
     });
 
-    // Glisser à la souris/au doigt pour naviguer, comme sur les fiches produit.
+    // Glisser à la souris/au doigt pour naviguer (carrousel 3D du bureau
+    // uniquement — sur mobile, le défilement natif s'en charge déjà).
     let depart = null;
-    function debutGlisser(x) { depart = x; }
+    function debutGlisser(x) { if (!piste.classList.contains("mode-scroll")) depart = x; }
     function finGlisser(x) {
       if (depart === null) return;
       const delta = x - depart;
@@ -249,6 +288,30 @@
     window.addEventListener("mouseup", (e) => { if (depart !== null) finGlisser(e.clientX); });
     piste.addEventListener("touchstart", (e) => debutGlisser(e.touches[0].clientX), { passive: true });
     piste.addEventListener("touchend", (e) => finGlisser(e.changedTouches[0].clientX));
+
+    // En mode scroll natif (mobile), le compteur et la carte "active"
+    // suivent en continu la position de défilement — les photos changent
+    // au fil du geste, sans étape de rotation à part.
+    let rafDefilement = null;
+    piste.addEventListener("scroll", () => {
+      if (!piste.classList.contains("mode-scroll") || rafDefilement) return;
+      rafDefilement = requestAnimationFrame(() => {
+        rafDefilement = null;
+        const centre = piste.scrollLeft + piste.clientWidth / 2;
+        let plusProche = 0;
+        let distanceMin = Infinity;
+        cartes.forEach((carte, i) => {
+          const centreCarte = carte.offsetLeft + carte.offsetWidth / 2;
+          const distance = Math.abs(centreCarte - centre);
+          if (distance < distanceMin) { distanceMin = distance; plusProche = i; }
+        });
+        if (plusProche !== actif) {
+          actif = plusProche;
+          cartes.forEach((c, i) => c.classList.toggle("vitrine-actif", i === actif));
+          elCompteurActuel.textContent = String(actif + 1).padStart(2, "0");
+        }
+      });
+    }, { passive: true });
 
     window.addEventListener("resize", positionnerCartes);
     positionnerCartes();
