@@ -27,79 +27,32 @@
   @media (min-width: 1024px) { .partenaire-logo { order: 0; } }
   .partenaire-logo img { width: 100%; max-width: 34rem; height: auto; }
 
-  /* Vitrine des réalisations SV : carrousel "coverflow" en perspective 3D
-     — la carte active est grande et nette au centre, les voisines
-     s'inclinent et s'estompent sur les côtés pour donner de la
-     profondeur. Rendu entièrement par JS (transform par carte), pas de
-     simple défilement horizontal. */
-  .vitrine-sv {
-    position: relative; margin: 0 auto; max-width: 68rem;
-    height: 24rem; display: flex; align-items: center; justify-content: center;
-    perspective: 1800px;
+  /* Galerie des réalisations SV : grille en quinconce (pas de carrousel).
+     Les photos s'affichent toutes directement, avec un léger décalage
+     vertical alterné et des formats variés pour un rendu plus
+     architectural qu'une grille strictement alignée. Elles apparaissent
+     en cascade au scroll via .reveal (voir js/layout.js). */
+  .galerie-sv {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
   }
-  .vitrine-sv::before {
-    content: ""; position: absolute; inset: -4rem; z-index: 0; pointer-events: none;
-    background: radial-gradient(ellipse 55% 55% at 50% 50%, rgba(201,166,107,0.16), transparent 70%);
-    filter: blur(10px);
+  @media (min-width: 640px) {
+    .galerie-sv { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
   }
-  .vitrine-piste { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; touch-action: pan-y; }
-  .vitrine-carte {
-    position: absolute; top: 50%; left: 50%; z-index: 1;
-    width: min(70vw, 28rem); aspect-ratio: 4/3;
-    border-radius: 1rem; overflow: hidden; background: var(--anthracite);
-    box-shadow: 0 25px 50px -18px rgba(0,0,0,0.65);
-    cursor: pointer; user-select: none;
-    transition: transform 0.7s cubic-bezier(0.16,1,0.3,1), opacity 0.7s ease, filter 0.7s ease, box-shadow 0.7s ease;
+  .galerie-sv-item {
+    position: relative; overflow: hidden; border-radius: 1rem;
+    background: var(--anthracite); aspect-ratio: 3/4;
+    box-shadow: 0 20px 45px -22px rgba(0,0,0,0.55);
   }
-  .vitrine-carte img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-  .vitrine-carte.vitrine-actif {
-    cursor: default;
-    box-shadow: 0 35px 70px -18px rgba(201,166,107,0.3), 0 30px 60px -20px rgba(0,0,0,0.75);
+  .galerie-sv-item img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform 0.8s var(--ease);
   }
-  /* Survol d'une carte voisine (estompée) : la rendre nette et pleinement
-     visible pour la prévisualiser avant de cliquer. !important nécessaire
-     car l'opacité/le flou sont sinon fixés en style inline par le JS. */
-  .vitrine-carte:not(.vitrine-actif):hover {
-    opacity: 1 !important;
-    filter: none !important;
-    z-index: 9 !important;
-  }
-  .vitrine-nav {
-    position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
-    width: 3rem; height: 3rem; border-radius: 999px;
-    background: rgba(10,10,10,0.35); backdrop-filter: blur(6px);
-    border: 1px solid rgba(255,255,255,0.12); color: var(--ivoire);
-    display: flex; align-items: center; justify-content: center; font-size: 1.35rem;
-    transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
-  }
-  .vitrine-nav:hover { background: rgba(201,166,107,0.2); border-color: rgba(201,166,107,0.5); transform: translateY(-50%) scale(1.08); }
-  .vitrine-precedent { left: 0.5rem; }
-  .vitrine-suivant { right: 0.5rem; }
-  .vitrine-compteur {
-    display: flex; justify-content: center; align-items: baseline; gap: 0.4rem;
-    margin-top: 1.75rem; font-family: 'Fraunces', serif; letter-spacing: 0.04em;
-  }
-  .vitrine-compteur-actuel { font-size: 1.25rem; color: var(--or); }
-  .vitrine-compteur-sep, .vitrine-compteur-total { font-size: 0.9rem; color: var(--muted); }
-  @media (max-width: 640px) {
-    .vitrine-sv { height: 18rem; perspective: none; }
-    .vitrine-carte { width: min(62vw, 18rem); }
-    .vitrine-nav { width: 2.5rem; height: 2.5rem; font-size: 1.1rem; }
-
-    /* Sur mobile, un vrai défilement horizontal natif et continu — les
-       photos glissent au doigt sans à-coup, plutôt que le carrousel 3D
-       du bureau (cliquer/glisser pour "tourner" une carte à la fois). */
-    .vitrine-piste.mode-scroll {
-      position: static; display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
-      scroll-behavior: smooth; gap: 1rem; align-items: center; height: 100%;
-      padding: 0 9%; -ms-overflow-style: none; scrollbar-width: none;
-    }
-    .vitrine-piste.mode-scroll::-webkit-scrollbar { display: none; }
-    .vitrine-piste.mode-scroll .vitrine-carte {
-      position: static; width: auto; flex: 0 0 82%; scroll-snap-align: center;
-      transform: none !important; opacity: 1 !important; filter: none !important;
-      pointer-events: auto !important;
-    }
+  .galerie-sv-item:hover img { transform: scale(1.06); }
+  .galerie-sv-item:nth-child(3n) { aspect-ratio: 1/1; }
+  @media (min-width: 640px) {
+    .galerie-sv-item:nth-child(6n+2),
+    .galerie-sv-item:nth-child(6n+6) { margin-top: 3rem; }
+    .galerie-sv-item:nth-child(6n+4) { margin-top: -1.5rem; }
   }
 </style>
 </head>
@@ -128,21 +81,12 @@
         </div>
       </div>
 
-      <div class="mt-8" id="bloc-carousel-sv" style="margin-top:5rem;display:none;">
+      <div class="mt-8" id="bloc-galerie-sv" style="margin-top:5rem;display:none;">
         <div class="section-tete reveal">
           <p class="eyebrow">Ses réalisations</p>
           <h2 style="font-size:1.75rem;">Quelques pièces fabriquées par SV Menuiserie</h2>
         </div>
-        <div class="vitrine-sv reveal">
-          <button class="vitrine-nav vitrine-precedent" id="vitrine-precedent" aria-label="Réalisation précédente">‹</button>
-          <div class="vitrine-piste" id="vitrine-piste"></div>
-          <button class="vitrine-nav vitrine-suivant" id="vitrine-suivant" aria-label="Réalisation suivante">›</button>
-        </div>
-        <div class="vitrine-compteur">
-          <span class="vitrine-compteur-actuel" id="vitrine-compteur-actuel">01</span>
-          <span class="vitrine-compteur-sep">/</span>
-          <span class="vitrine-compteur-total" id="vitrine-compteur-total">01</span>
-        </div>
+        <div class="galerie-sv" id="galerie-sv"></div>
       </div>
     </div>
   </section>
@@ -189,132 +133,19 @@
     }
     if (images.length === 0) return;
 
-    document.getElementById("bloc-carousel-sv").style.display = "";
-    const piste = document.getElementById("vitrine-piste");
-    const elCompteurActuel = document.getElementById("vitrine-compteur-actuel");
-    const elCompteurTotal = document.getElementById("vitrine-compteur-total");
-    elCompteurTotal.textContent = String(images.length).padStart(2, "0");
+    document.getElementById("bloc-galerie-sv").style.display = "";
+    const galerie = document.getElementById("galerie-sv");
 
-    piste.innerHTML = images
-      .map((src, i) => `<div class="vitrine-carte" data-index="${i}"><img src="${src}" alt="Réalisation SV Menuiserie ${i + 1}" loading="lazy" /></div>`)
+    // Cascade légère à l'apparition (voir .reveal / window.initReveal dans
+    // js/layout.js) : les photos se révèlent par petites vagues au fil du
+    // scroll plutôt que toutes en même temps.
+    galerie.innerHTML = images
+      .map((src, i) => `
+        <div class="galerie-sv-item reveal" style="transition-delay:${(i % 6) * 0.07}s;">
+          <img src="${src}" alt="Réalisation SV Menuiserie ${i + 1}" loading="lazy" />
+        </div>`)
       .join("");
-    const cartes = Array.from(piste.querySelectorAll(".vitrine-carte"));
 
-    let actif = 0;
-
-    // Décalage circulaire le plus court entre une carte et la carte active
-    // (ex: sur 7 images, la carte 6 est à -1 de la carte 0, pas à +6).
-    function decalage(i) {
-      let d = i - actif;
-      const total = images.length;
-      if (d > total / 2) d -= total;
-      if (d < -total / 2) d += total;
-      return d;
-    }
-
-    function estModeScroll() {
-      return window.innerWidth < 640;
-    }
-
-    function positionnerCartes() {
-      const modeScroll = estModeScroll();
-      piste.classList.toggle("mode-scroll", modeScroll);
-
-      if (modeScroll) {
-        cartes.forEach((carte) => carte.classList.toggle("vitrine-actif", Number(carte.dataset.index) === actif));
-        elCompteurActuel.textContent = String(actif + 1).padStart(2, "0");
-        return;
-      }
-
-      const decalX = 46; // % de la largeur de carte
-      const rotation = 30; // degrés
-      const echelle = 0.78;
-
-      cartes.forEach((carte, i) => {
-        const d = decalage(i);
-        const abs = Math.abs(d);
-        carte.classList.toggle("vitrine-actif", d === 0);
-
-        if (abs > 2) {
-          carte.style.opacity = "0";
-          carte.style.pointerEvents = "none";
-          carte.style.zIndex = "0";
-          carte.style.transform = `translate(-50%, -50%) translateX(${d > 0 ? 100 : -100}%) scale(0.5)`;
-          return;
-        }
-
-        carte.style.pointerEvents = d === 0 ? "none" : "auto";
-        carte.style.zIndex = String(10 - abs);
-        const opacite = d === 0 ? 1 : abs === 1 ? 0.55 : 0.22;
-        const echelleCarte = d === 0 ? 1 : echelle - (abs - 1) * 0.12;
-        carte.style.opacity = String(opacite);
-        carte.style.filter = d === 0 ? "none" : `brightness(${0.65}) blur(${abs === 1 ? 1 : 2}px)`;
-        carte.style.transform =
-          `translate(-50%, -50%) translateX(${d * decalX}%) scale(${echelleCarte}) rotateY(${d === 0 ? 0 : (d > 0 ? -1 : 1) * rotation}deg)`;
-      });
-
-      elCompteurActuel.textContent = String(actif + 1).padStart(2, "0");
-    }
-
-    function allerA(i) {
-      actif = (i + images.length) % images.length;
-      positionnerCartes();
-      if (piste.classList.contains("mode-scroll")) {
-        cartes[actif].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      }
-    }
-
-    cartes.forEach((carte, i) => carte.addEventListener("click", () => { if (i !== actif) allerA(i); }));
-    document.getElementById("vitrine-precedent").addEventListener("click", () => allerA(actif - 1));
-    document.getElementById("vitrine-suivant").addEventListener("click", () => allerA(actif + 1));
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft") allerA(actif - 1);
-      if (e.key === "ArrowRight") allerA(actif + 1);
-    });
-
-    // Glisser à la souris/au doigt pour naviguer (carrousel 3D du bureau
-    // uniquement — sur mobile, le défilement natif s'en charge déjà).
-    let depart = null;
-    function debutGlisser(x) { if (!piste.classList.contains("mode-scroll")) depart = x; }
-    function finGlisser(x) {
-      if (depart === null) return;
-      const delta = x - depart;
-      depart = null;
-      if (Math.abs(delta) < 40) return;
-      allerA(delta < 0 ? actif + 1 : actif - 1);
-    }
-    piste.addEventListener("mousedown", (e) => debutGlisser(e.clientX));
-    window.addEventListener("mouseup", (e) => { if (depart !== null) finGlisser(e.clientX); });
-    piste.addEventListener("touchstart", (e) => debutGlisser(e.touches[0].clientX), { passive: true });
-    piste.addEventListener("touchend", (e) => finGlisser(e.changedTouches[0].clientX));
-
-    // En mode scroll natif (mobile), le compteur et la carte "active"
-    // suivent en continu la position de défilement — les photos changent
-    // au fil du geste, sans étape de rotation à part.
-    let rafDefilement = null;
-    piste.addEventListener("scroll", () => {
-      if (!piste.classList.contains("mode-scroll") || rafDefilement) return;
-      rafDefilement = requestAnimationFrame(() => {
-        rafDefilement = null;
-        const centre = piste.scrollLeft + piste.clientWidth / 2;
-        let plusProche = 0;
-        let distanceMin = Infinity;
-        cartes.forEach((carte, i) => {
-          const centreCarte = carte.offsetLeft + carte.offsetWidth / 2;
-          const distance = Math.abs(centreCarte - centre);
-          if (distance < distanceMin) { distanceMin = distance; plusProche = i; }
-        });
-        if (plusProche !== actif) {
-          actif = plusProche;
-          cartes.forEach((c, i) => c.classList.toggle("vitrine-actif", i === actif));
-          elCompteurActuel.textContent = String(actif + 1).padStart(2, "0");
-        }
-      });
-    }, { passive: true });
-
-    window.addEventListener("resize", positionnerCartes);
-    positionnerCartes();
     window.initReveal();
   })();
 </script>
