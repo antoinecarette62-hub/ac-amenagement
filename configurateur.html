@@ -52,6 +52,29 @@
     .config-scene, .config-halo { animation: none; }
   }
   .config-scene-contenu { position: relative; z-index: 1; }
+
+  /* Vue en grand de la photo des essences, ouverte au double-clic/double-tap
+     (pas au simple tap, pour ne pas se déclencher par accident en scrollant
+     sur mobile) — même comportement que la galerie partenaire. */
+  .photo-essences { cursor: zoom-in; }
+  .lightbox-essences {
+    position: fixed; inset: 0; z-index: 200; display: none;
+    align-items: center; justify-content: center; padding: 2rem;
+    background: rgba(6,6,6,0.92); backdrop-filter: blur(6px);
+    cursor: zoom-out;
+  }
+  .lightbox-essences.ouvert { display: flex; }
+  .lightbox-essences img {
+    max-width: min(92vw, 70rem); max-height: 88vh; border-radius: 0.75rem;
+    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.7); cursor: default;
+  }
+  .lightbox-essences-fermer {
+    position: absolute; top: 1.25rem; right: 1.5rem; width: 2.75rem; height: 2.75rem;
+    border-radius: 999px; background: rgba(255,255,255,0.1); color: var(--ivoire);
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    transition: background 0.25s ease;
+  }
+  .lightbox-essences-fermer:hover { background: rgba(255,255,255,0.2); }
 </style>
 </head>
 <body>
@@ -131,14 +154,80 @@
           </div>
         </div>
       </div>
+
+      <div class="section-tete reveal" style="margin-top:6rem;">
+        <p class="eyebrow">Sur demande</p>
+        <h2>Matériaux disponibles sur mesure</h2>
+        <p class="texte-muted mt-4">Au-delà du MDF et du bois massif proposés ci-dessus, d'autres essences peuvent être étudiées pour les projets recherchant une finition particulière ou une résistance spécifique. Disponibles uniquement sur demande et sur devis.</p>
+      </div>
+
+      <div class="reveal photo-essences" id="photo-essences" style="border-radius:1rem;overflow:hidden;border:1px solid var(--border);margin-bottom:2.5rem;">
+        <img src="images/essence bois/echantillons-bois.jpg" alt="Échantillons comparés des essences disponibles : MDF, peuplier, hévéa, bouleau, Okoumé Marine" style="display:block;width:100%;height:auto;" loading="lazy" />
+      </div>
+
+      <div class="grille grille-3 reveal" style="transition-delay:0.1s;">
+        <div class="carte">
+          <h3 style="font-size:1.1rem;">Contreplaqué peuplier 18 mm</h3>
+          <p class="texte-muted mt-2" style="font-size:0.9rem;line-height:1.6;">Bois naturel léger et chaleureux.</p>
+        </div>
+        <div class="carte">
+          <h3 style="font-size:1.1rem;">Contreplaqué bouleau 19 mm</h3>
+          <p class="texte-muted mt-2" style="font-size:0.9rem;line-height:1.6;">Finition premium avec chant multicouche esthétique.</p>
+        </div>
+        <div class="carte">
+          <h3 style="font-size:1.1rem;">Contreplaqué Okoumé Marine 18 mm</h3>
+          <p class="texte-muted mt-2" style="font-size:0.9rem;line-height:1.6;">Solution adaptée aux projets nécessitant une meilleure résistance à l'humidité.</p>
+        </div>
+      </div>
+
+      <p class="texte-muted reveal" style="margin-top:2rem;max-width:42rem;">Chaque projet peut être étudié selon vos envies, vos contraintes et le rendu recherché. Contactez-nous pour obtenir un devis personnalisé.</p>
     </div>
   </section>
 </main>
+
+<div class="lightbox-essences" id="lightbox-essences" aria-hidden="true">
+  <button class="lightbox-essences-fermer" id="lightbox-essences-fermer" aria-label="Fermer">✕</button>
+  <img src="" alt="" id="lightbox-essences-image" />
+</div>
 
 <div id="site-footer"></div>
 
 <script src="js/data.js"></script>
 <script src="js/layout.js"></script>
+<script>
+  // Vue en grand de la photo des essences au double-clic (souris) / double-tap
+  // (tactile) — un simple tap/clic ne fait rien, pour éviter une ouverture
+  // accidentelle en scrollant sur mobile.
+  (() => {
+    const photo = document.getElementById("photo-essences");
+    const img = photo.querySelector("img");
+    const lightbox = document.getElementById("lightbox-essences");
+    const lightboxImage = document.getElementById("lightbox-essences-image");
+
+    function ouvrirLightbox() {
+      lightboxImage.src = img.src;
+      lightboxImage.alt = img.alt;
+      lightbox.classList.add("ouvert");
+      lightbox.setAttribute("aria-hidden", "false");
+    }
+    function fermerLightbox() {
+      lightbox.classList.remove("ouvert");
+      lightbox.setAttribute("aria-hidden", "true");
+    }
+    lightbox.addEventListener("click", (e) => { if (e.target === lightbox) fermerLightbox(); });
+    document.getElementById("lightbox-essences-fermer").addEventListener("click", fermerLightbox);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") fermerLightbox(); });
+
+    photo.addEventListener("dblclick", ouvrirLightbox);
+
+    let dernierTap = 0;
+    photo.addEventListener("touchend", () => {
+      const maintenant = Date.now();
+      if (maintenant - dernierTap < 350) ouvrirLightbox();
+      dernierTap = maintenant;
+    });
+  })();
+</script>
 <script>
   const LIBELLES_MATIERE_CONFIG = { MDF: "MDF", CHENE: "Bois massif" };
 
@@ -160,11 +249,13 @@
      il suffit d'ajouter une entrée ici — rien d'autre à toucher. */
   const BAREME_TARIFAIRE = {
     MDF: {
-      forfait: 150,
-      coefficientM2: 210,
-      calculer({ largeur, hauteur }) {
-        const surfaceM2 = (largeur / 100) * (hauteur / 100);
-        return this.forfait + surfaceM2 * this.coefficientM2;
+      prixBaseParEpaisseur: { 19: 149, 22: 169 },
+      majorationParPalierDe5cm: 9,
+      calculer({ largeur, hauteur, epaisseur }) {
+        const { largeurMin, hauteurMin } = LIMITES_DIMENSIONS.MDF;
+        const prixBase = this.prixBaseParEpaisseur[epaisseur] ?? 0;
+        const paliers = (largeur - largeurMin) / 5 + (hauteur - hauteurMin) / 5;
+        return prixBase + this.majorationParPalierDe5cm * paliers;
       },
     },
     CHENE: {
