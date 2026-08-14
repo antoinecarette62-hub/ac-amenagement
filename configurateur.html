@@ -103,7 +103,7 @@
 
           <div class="champ">
             <div class="champ-slider"><label for="largeur">Largeur</label><span id="valeur-largeur">100 cm</span></div>
-            <input type="range" id="largeur" min="40" max="200" step="5" value="100" />
+            <input type="range" id="largeur" min="40" max="150" step="5" value="100" />
           </div>
 
           <div class="champ">
@@ -113,11 +113,7 @@
 
           <div class="champ">
             <label>Épaisseur</label>
-            <div class="pastille-groupe" id="pastilles-epaisseur">
-              <button class="pastille" data-valeur="12">12 mm</button>
-              <button class="pastille actif" data-valeur="18">18 mm</button>
-              <button class="pastille" data-valeur="24">24 mm</button>
-            </div>
+            <div class="pastille-groupe" id="pastilles-epaisseur"></div>
           </div>
 
           <div class="champ">
@@ -146,6 +142,18 @@
 <script>
   const LIBELLES_MATIERE_CONFIG = { MDF: "MDF", CHENE: "Bois massif" };
 
+  /* Bornes de dimensions par matière : au-delà, c'est du sur-mesure. */
+  const LIMITES_DIMENSIONS = {
+    MDF: { largeurMin: 40, largeurMax: 150, hauteurMin: 100, hauteurMax: 270 },
+    CHENE: { largeurMin: 120, largeurMax: 150, hauteurMin: 100, hauteurMax: 250 },
+  };
+
+  /* Épaisseurs disponibles par matière. */
+  const EPAISSEURS_PAR_MATIERE = {
+    MDF: [19, 22],
+    CHENE: [18, 33],
+  };
+
   /* Barème tarifaire : une entrée par matière, chacune avec son propre
      forfait de façonnage, son coefficient au m² et sa fonction de calcul.
      Pour ajouter une matière (chêne massif à tarif dédié, Valchromat...),
@@ -160,15 +168,13 @@
       },
     },
     CHENE: {
-      forfait: 150,
-      coefficientM2: 340,
-      seuilEpaisseurStandard: 18,
-      majorationEpaisseurParMm: 4,
+      prixBaseParEpaisseur: { 18: 199, 33: 249 },
+      majorationParPalierDe5cm: 15,
       calculer({ largeur, hauteur, epaisseur }) {
-        const surfaceM2 = (largeur / 100) * (hauteur / 100);
-        const surepaisseur = Math.max(0, epaisseur - this.seuilEpaisseurStandard);
-        const majoration = surepaisseur * this.majorationEpaisseurParMm * surfaceM2;
-        return this.forfait + surfaceM2 * this.coefficientM2 + majoration;
+        const { largeurMin, hauteurMin } = LIMITES_DIMENSIONS.CHENE;
+        const prixBase = this.prixBaseParEpaisseur[epaisseur] ?? 0;
+        const paliers = (largeur - largeurMin) / 5 + (hauteur - hauteurMin) / 5;
+        return prixBase + this.majorationParPalierDe5cm * paliers;
       },
     },
   };
@@ -202,7 +208,7 @@
     collection: (produitInitial && donnees.collections.find((c) => c.slug === produitInitial.collectionSlug)) || collectionsVisibles[0] || null,
     largeur: produitInitial ? produitInitial.largeur : 100,
     hauteur: produitInitial ? produitInitial.hauteur : 200,
-    epaisseur: produitInitial ? produitInitial.epaisseur : 18,
+    epaisseur: produitInitial ? produitInitial.epaisseur : 19,
     matiere: (produitInitial && BAREME_TARIFAIRE[produitInitial.matiere]) ? produitInitial.matiere : "MDF",
   };
   etat.produit = produitInitial || premierProduitDe(etat.collection ? etat.collection.slug : null);
@@ -241,7 +247,24 @@
     });
   }
 
+  function appliquerLimitesDimensions() {
+    const limites = LIMITES_DIMENSIONS[etat.matiere] || LIMITES_DIMENSIONS.MDF;
+    elLargeur.min = limites.largeurMin;
+    elLargeur.max = limites.largeurMax;
+    elHauteur.min = limites.hauteurMin;
+    elHauteur.max = limites.hauteurMax;
+    etat.largeur = Math.min(Math.max(etat.largeur, limites.largeurMin), limites.largeurMax);
+    etat.hauteur = Math.min(Math.max(etat.hauteur, limites.hauteurMin), limites.hauteurMax);
+    elLargeur.value = etat.largeur;
+    elHauteur.value = etat.hauteur;
+
+    const epaisseursDisponibles = EPAISSEURS_PAR_MATIERE[etat.matiere] || EPAISSEURS_PAR_MATIERE.MDF;
+    if (!epaisseursDisponibles.includes(etat.epaisseur)) etat.epaisseur = epaisseursDisponibles[0];
+  }
+
   function rendre() {
+    appliquerLimitesDimensions();
+
     construirePastilles("pastilles-collection", collectionsVisibles, (c) => c.nom, etat.collection, (c) => {
       etat.collection = c;
       etat.produit = premierProduitDe(c.slug);
@@ -261,8 +284,9 @@
       etat.matiere = m; rendre();
     });
 
-    document.querySelectorAll("#pastilles-epaisseur .pastille").forEach((btn) => {
-      btn.classList.toggle("actif", Number(btn.dataset.valeur) === etat.epaisseur);
+    const epaisseursDisponibles = EPAISSEURS_PAR_MATIERE[etat.matiere] || EPAISSEURS_PAR_MATIERE.MDF;
+    construirePastilles("pastilles-epaisseur", epaisseursDisponibles, (e) => `${e} mm`, etat.epaisseur, (e) => {
+      etat.epaisseur = e; rendre();
     });
 
     elValeurLargeur.textContent = `${etat.largeur} cm`;
@@ -286,9 +310,6 @@
 
   elLargeur.addEventListener("input", (e) => { etat.largeur = Number(e.target.value); rendre(); });
   elHauteur.addEventListener("input", (e) => { etat.hauteur = Number(e.target.value); rendre(); });
-  document.querySelectorAll("#pastilles-epaisseur .pastille").forEach((btn) => {
-    btn.addEventListener("click", () => { etat.epaisseur = Number(btn.dataset.valeur); rendre(); });
-  });
 
   rendre();
   window.initReveal();

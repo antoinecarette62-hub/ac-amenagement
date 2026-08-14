@@ -41,7 +41,7 @@ const DONNEES_PAR_DEFAUT = {
           prix: 320 + i * 65,
           largeur: 60 + i * 15,
           hauteur: 200,
-          epaisseur: 18,
+          epaisseur: 19,
           matiere,
           couleur: couleurs[matiere],
           tempsFabrication: 15 + i * 2,
