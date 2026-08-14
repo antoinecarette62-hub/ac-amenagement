@@ -75,11 +75,30 @@ function construireFooter() {
     </footer>`;
 }
 
+// Pages où le CTA sticky mobile n'a pas sa place : la page de devis elle-même
+// (déjà l'action demandée), l'accueil (déjà deux CTA "devis" visibles,
+// une barre sticky en plus fait trop insistant) et l'admin (usage interne).
+const PAGES_SANS_CTA_STICKY = ["devis.html", "index.html"];
+
+function construireCtaSticky() {
+  return `
+    <div class="cta-sticky-mobile" id="cta-sticky-mobile">
+      <a href="devis.html" class="btn btn-primaire btn-full">Demander un devis →</a>
+    </div>`;
+}
+
 function initLayout() {
   const header = document.getElementById("site-header");
   const footer = document.getElementById("site-footer");
   if (header) header.innerHTML = construireHeader();
   if (footer) footer.innerHTML = construireFooter();
+
+  const pageActuelle = location.pathname.split("/").pop() || "index.html";
+  const estAdmin = location.pathname.includes("/admin/");
+  if (header && !estAdmin && !PAGES_SANS_CTA_STICKY.includes(pageActuelle)) {
+    document.body.insertAdjacentHTML("beforeend", construireCtaSticky());
+    document.body.classList.add("a-cta-sticky-mobile");
+  }
 
   const nav = document.getElementById("nav-principale");
   const burger = document.getElementById("btn-burger");

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="images/logo.png" />
+<title>Page introuvable — Ac Ligna</title>
+<meta name="description" content="Cette page n'existe pas ou plus. Retrouvez nos collections de claustras sur mesure et nos autres aménagements intérieurs." />
+<meta name="robots" content="noindex" />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .erreur-404 { font-family: 'Fraunces', serif; font-size: clamp(4rem, 14vw, 8rem); line-height: 1; color: var(--or); }
+  .erreur-boutons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main>
+  <section class="section-fond-anime">
+    <canvas class="canvas-fond-anime" aria-hidden="true"></canvas>
+    <div class="motif-fond-anime" aria-hidden="true"></div>
+    <div class="voile-fond-anime" aria-hidden="true"></div>
+    <div class="container contenu-fond-anime text-center reveal" style="max-width:36rem;padding-top:3rem;padding-bottom:3rem;">
+      <p class="erreur-404">404</p>
+      <h1 class="mt-4">Cette page n'existe pas (ou plus).</h1>
+      <p class="texte-muted mt-4">Le lien est peut-être erroné ou la page a changé d'adresse. Retrouvez ce que vous cherchiez ci-dessous.</p>
+      <div class="erreur-boutons">
+        <a href="index.html" class="btn btn-primaire">Retour à l'accueil</a>
+        <a href="collections.html" class="btn btn-secondaire">Voir nos collections</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/data.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/fond-anime.js"></script>
+</body>
+</html>
