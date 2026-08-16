@@ -65,11 +65,25 @@
       }
     : null;
 
+  // Un claustra précis (catalogue ou configurateur) porte déjà sa propre
+  // catégorie et ses dimensions : pas besoin de redemander un « type de
+  // projet » générique ni un budget, le récapitulatif ci-dessous suffit.
+  const claustraPrecis = !!(produit || config);
+
   let recapHtml = "";
   if (produit) {
-    recapHtml = `<div class="bloc-recap">
-      <img src="${produit.imagePrincipale}" alt="${produit.nom}" />
-      <div><p class="eyebrow" style="margin:0;">Produit sélectionné</p><p style="font-family:'Fraunces',serif;">${produit.nom}</p><p class="texte-muted" style="font-size:0.85rem;">${Donnees.formatPrix(produit.prix)}</p></div>
+    const collectionProduit = donnees.collections.find((c) => c.slug === produit.collectionSlug);
+    recapHtml = `<div class="bloc-recap" style="display:block;">
+      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem;">
+        <img src="${produit.imagePrincipale}" alt="${produit.nom}" />
+        <div><p class="eyebrow" style="margin:0;">Produit sélectionné</p><p style="font-family:'Fraunces',serif;">${produit.nom}</p><p class="texte-muted" style="font-size:0.85rem;">${Donnees.formatPrix(produit.prix)}</p></div>
+      </div>
+      <ul>
+        ${collectionProduit ? `<li>Collection : ${collectionProduit.nom}</li>` : ""}
+        <li>Dimensions : ${produit.largeur} × ${produit.hauteur} cm</li>
+        <li>Épaisseur : ${produit.epaisseur} mm</li>
+        <li>Matière : ${LIBELLES_MATIERE[produit.matiere] || produit.matiere}</li>
+      </ul>
     </div>`;
   } else if (config) {
     recapHtml = `<div class="bloc-recap" style="display:block;">
@@ -116,6 +130,7 @@
         <div class="champ"><label for="telephone">Téléphone</label><input id="telephone" type="tel" required /><p class="champ-erreur hidden" data-erreur="telephone"></p></div>
       </div>
       <div class="champ"><label for="ville">Ville</label><input id="ville" required minlength="2" /><p class="champ-erreur hidden" data-erreur="ville"></p></div>
+      ${claustraPrecis ? "" : `
       <div class="champ">
         <label for="type-projet">Type de projet</label>
         <select id="type-projet" required>
@@ -128,8 +143,8 @@
         <label for="precision-projet">Précisez votre projet</label>
         <input id="precision-projet" placeholder="Ex. : escalier, fenêtre…" />
         <p class="champ-erreur hidden" data-erreur="precision-projet"></p>
-      </div>
-      <div class="champ-ligne champ-ligne-2">
+      </div>`}
+      <div class="${claustraPrecis ? "" : "champ-ligne champ-ligne-2"}">
         <div class="champ">
           <label for="delai">C'est pour quand ?</label>
           <select id="delai" required>
@@ -141,13 +156,14 @@
           </select>
           <p class="champ-erreur hidden" data-erreur="delai"></p>
         </div>
+        ${claustraPrecis ? "" : `
         <div class="champ">
           <label for="budget">Budget estimé</label>
           <select id="budget" required disabled>
             <option value="">Choisissez d'abord un type de projet</option>
           </select>
           <p class="champ-erreur hidden" data-erreur="budget"></p>
-        </div>
+        </div>`}
       </div>
       <div class="champ"><label for="message">Votre projet <span class="texte-muted" style="font-weight:400;">(facultatif)</span></label><textarea id="message" rows="4" minlength="10" placeholder="Décrivez votre projet : pièce concernée, dimensions approximatives, style recherché…"></textarea><p class="champ-erreur hidden" data-erreur="message"></p></div>
       <button type="submit" class="btn btn-primaire btn-full">Envoyer ma demande</button>
@@ -169,25 +185,27 @@
   const selectBudget = document.getElementById("budget");
   const champPrecisionProjet = document.getElementById("champ-precision-projet");
   const inputPrecisionProjet = document.getElementById("precision-projet");
-  selectTypeProjet.addEventListener("change", () => {
-    const type = TYPES_PROJET[selectTypeProjet.value];
+  if (selectTypeProjet) {
+    selectTypeProjet.addEventListener("change", () => {
+      const type = TYPES_PROJET[selectTypeProjet.value];
 
-    // « Autre » ne correspond à aucune catégorie fixe : on laisse le client
-    // décrire lui-même son projet (garde-corps d'escalier, brise-vue de
-    // fenêtre…) dans un champ dédié, qui n'apparaît que dans ce cas.
-    const estAutre = selectTypeProjet.value === "autre";
-    champPrecisionProjet.classList.toggle("hidden", !estAutre);
-    inputPrecisionProjet.required = estAutre;
-    if (!estAutre) inputPrecisionProjet.value = "";
+      // « Autre » ne correspond à aucune catégorie fixe : on laisse le client
+      // décrire lui-même son projet (garde-corps d'escalier, brise-vue de
+      // fenêtre…) dans un champ dédié, qui n'apparaît que dans ce cas.
+      const estAutre = selectTypeProjet.value === "autre";
+      champPrecisionProjet.classList.toggle("hidden", !estAutre);
+      inputPrecisionProjet.required = estAutre;
+      if (!estAutre) inputPrecisionProjet.value = "";
 
-    if (!type) {
-      selectBudget.innerHTML = `<option value="">Choisissez d'abord un type de projet</option>`;
-      selectBudget.disabled = true;
-      return;
-    }
-    selectBudget.innerHTML = `<option value="">Sélectionnez…</option>${type.budgets.map((b) => `<option value="${b}">${b}</option>`).join("")}`;
-    selectBudget.disabled = false;
-  });
+      if (!type) {
+        selectBudget.innerHTML = `<option value="">Choisissez d'abord un type de projet</option>`;
+        selectBudget.disabled = true;
+        return;
+      }
+      selectBudget.innerHTML = `<option value="">Sélectionnez…</option>${type.budgets.map((b) => `<option value="${b}">${b}</option>`).join("")}`;
+      selectBudget.disabled = false;
+    });
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -195,7 +213,8 @@
     // Piège à bots : si rempli, on affiche quand même un succès sans rien envoyer.
     const siteWeb = document.getElementById("site-web").value;
 
-    const champs = { prenom: "prenom", nom: "nom", email: "email", telephone: "telephone", ville: "ville", typeProjet: "type-projet", precisionProjet: "precision-projet", delai: "delai", budget: "budget", message: "message" };
+    const champs = { prenom: "prenom", nom: "nom", email: "email", telephone: "telephone", ville: "ville", delai: "delai", message: "message" };
+    if (selectTypeProjet) Object.assign(champs, { typeProjet: "type-projet", precisionProjet: "precision-projet", budget: "budget" });
     let valide = true;
     document.querySelectorAll(".champ-erreur").forEach((el) => el.classList.add("hidden"));
 
@@ -216,13 +235,15 @@
       email: document.getElementById("email").value,
       telephone: document.getElementById("telephone").value,
       ville: document.getElementById("ville").value,
-      typeProjet: selectTypeProjet.value === "autre"
-        ? `Autre : ${inputPrecisionProjet.value}`
-        : (TYPES_PROJET[selectTypeProjet.value] || {}).libelle || selectTypeProjet.value,
       delai: selectDelai.options[selectDelai.selectedIndex].text,
-      budget: selectBudget.value,
       message: document.getElementById("message").value,
     };
+    if (selectTypeProjet) {
+      valeurs.typeProjet = selectTypeProjet.value === "autre"
+        ? `Autre : ${inputPrecisionProjet.value}`
+        : (TYPES_PROJET[selectTypeProjet.value] || {}).libelle || selectTypeProjet.value;
+      valeurs.budget = selectBudget.value;
+    }
 
     let envoiReussi = true;
 
@@ -236,7 +257,7 @@
       boutonEnvoyer.disabled = true;
       boutonEnvoyer.textContent = "Envoi en cours…";
       const recapTexte = produit
-        ? `Produit sélectionné : ${produit.nom} (${Donnees.formatPrix(produit.prix)})`
+        ? `Produit sélectionné : ${produit.nom} — ${produit.largeur}×${produit.hauteur} cm, ${produit.epaisseur} mm, ${LIBELLES_MATIERE[produit.matiere] || produit.matiere} (${Donnees.formatPrix(produit.prix)})`
         : config
           ? `Configuration : ${[config.collectionNom && `Collection ${config.collectionNom}`, config.modele && `Modèle ${config.modele}`, config.largeur && `${config.largeur}×${config.hauteur} cm`, config.epaisseur && `${config.epaisseur} mm`, config.matiere && (LIBELLES_MATIERE[config.matiere] || config.matiere), config.prix && `≈ ${Donnees.formatPrix(config.prix)}`].filter(Boolean).join(" — ")}`
           : "Demande libre (sans produit ni configuration précise).";
@@ -253,9 +274,8 @@
             Email: valeurs.email,
             Téléphone: valeurs.telephone,
             Ville: valeurs.ville,
-            "Type de projet": valeurs.typeProjet,
+            ...(selectTypeProjet ? { "Type de projet": valeurs.typeProjet, "Budget estimé": valeurs.budget } : {}),
             "C'est pour quand ?": valeurs.delai,
-            "Budget estimé": valeurs.budget,
             Projet: valeurs.message,
             "Récapitulatif": recapTexte,
           }),
