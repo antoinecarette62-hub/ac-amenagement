@@ -47,6 +47,13 @@
   const donnees = Donnees.charger();
   const zone = document.getElementById("zone-formulaire");
 
+  // Le prénom saisi est réinjecté tel quel dans le message de confirmation :
+  // on l'échappe pour éviter qu'une saisie du type "<img onerror=...>" ne
+  // s'exécute dans la page.
+  function echapperHtml(texte) {
+    return texte.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
   // Résout soit un produit précis (?produit=slug), soit une configuration libre.
   const produit = params.get("produit") ? donnees.produits.find((p) => p.slug === params.get("produit")) : null;
   const config = !produit && (params.get("largeur") || params.get("matiere"))
@@ -240,11 +247,11 @@
 
     zone.innerHTML = envoiReussi
       ? `<div class="carte text-center" style="border-color:rgba(201,166,107,0.3);background:rgba(201,166,107,0.05);">
-          <h3 style="font-size:1.5rem;">Merci pour votre demande !</h3>
+          <h3 style="font-size:1.5rem;">${echapperHtml(valeurs.prenom)}, merci pour votre demande !</h3>
           <p class="texte-muted mt-2">Notre équipe vous recontactera sous 48h ouvrées pour échanger sur votre projet.</p>
         </div>`
       : `<div class="carte text-center" style="border-color:rgba(224,82,82,0.3);background:rgba(224,82,82,0.05);">
-          <h3 style="font-size:1.5rem;">Votre demande est enregistrée, mais l'envoi a échoué.</h3>
+          <h3 style="font-size:1.5rem;">${echapperHtml(valeurs.prenom)}, votre demande est enregistrée, mais l'envoi a échoué.</h3>
           <p class="texte-muted mt-2">Contactez-nous directement au 06 45 38 13 00 ou à ac.ligna@hotmail.com pour être sûr d'être recontacté.</p>
         </div>`;
   });
